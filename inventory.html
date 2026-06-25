@@ -19,15 +19,9 @@
         .card { border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .menu-btn { font-size: 1.1rem; padding: 15px; border-radius: 12px; margin-bottom: 8px; }
         .install-btn { display: none; }
-        #dbStatus { position: fixed; top: 56px; left: 0; right: 0; z-index: 1030; text-align: center; padding: 6px; font-weight: bold; word-break: break-all; }
-        @media (display-mode: standalone) { body { padding-top: 0; } }
     </style>
 </head>
 <body>
-    <div id="dbStatus" class="bg-warning text-dark">
-        ⏳ Loading database… <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>
-    </div>
-
     <nav class="navbar navbar-dark fixed-top">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">🐷 Clark's Inventory</span>
@@ -43,14 +37,14 @@
     </ul>
 
     <div class="tab-content container pb-4">
-        <!-- ==================== POS Tab ==================== -->
+        <!-- POS Tab -->
         <div class="tab-pane fade show active" id="pos">
             <h4 class="mt-3 mb-2">Quick Menu</h4>
             <div class="d-grid gap-1 mb-3">
-                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Pork Sisig Full" data-price="100" disabled>Crispy Pork Sisig Full - ₱100</button>
-                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Bagnet" data-price="100" disabled>Crispy Bagnet - ₱100</button>
-                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Sisig with Rice" data-price="59" disabled>Crispy Sisig with Rice - ₱59</button>
-                <button class="btn btn-outline-primary menu-btn" data-item="Tofu Sisig" data-price="49" disabled>Tofu Sisig - ₱49</button>
+                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Pork Sisig Full" data-price="100">Crispy Pork Sisig Full - ₱100</button>
+                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Bagnet" data-price="100">Crispy Bagnet - ₱100</button>
+                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Sisig with Rice" data-price="59">Crispy Sisig with Rice - ₱59</button>
+                <button class="btn btn-outline-primary menu-btn" data-item="Tofu Sisig" data-price="49">Tofu Sisig - ₱49</button>
             </div>
             <h5>Current Order</h5>
             <div class="table-responsive">
@@ -62,22 +56,22 @@
             <div class="d-flex justify-content-between fw-bold mb-2">
                 <span>Total:</span> <span id="cartTotal">₱0.00</span>
             </div>
-            <div class="mb-2"><input type="number" id="amountPaid" class="form-control form-control-lg" placeholder="Amount customer paid" step="0.01" disabled></div>
+            <div class="mb-2"><input type="number" id="amountPaid" class="form-control form-control-lg" placeholder="Amount customer paid" step="0.01"></div>
             <div class="d-flex justify-content-between mb-3">
                 <span class="fw-bold">Change:</span> <span id="changeAmount" class="text-success fw-bold fs-5">₱0.00</span>
             </div>
-            <button class="btn btn-success btn-lg w-100 mb-2" id="submitSale" disabled>✅ Submit Sale</button>
+            <button class="btn btn-success btn-lg w-100 mb-2" id="submitSale">✅ Submit Sale</button>
             <div id="saleMessage"></div>
             <div id="receiptArea" class="d-none"></div>
         </div>
 
-        <!-- ==================== Sales Tab ==================== -->
+        <!-- Sales History Tab -->
         <div class="tab-pane fade" id="sales">
             <h4 class="mt-3">Sales History</h4>
             <div class="row g-2 mb-2">
-                <div class="col-5"><input type="date" id="salesFrom" class="form-control" placeholder="From" disabled></div>
-                <div class="col-5"><input type="date" id="salesTo" class="form-control" placeholder="To" disabled></div>
-                <div class="col-2"><button id="filterSales" class="btn btn-primary w-100" disabled>🔍</button></div>
+                <div class="col-5"><input type="date" id="salesFrom" class="form-control" placeholder="From"></div>
+                <div class="col-5"><input type="date" id="salesTo" class="form-control" placeholder="To"></div>
+                <div class="col-2"><button id="filterSales" class="btn btn-primary w-100">🔍</button></div>
             </div>
             <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
                 <table class="table table-sm table-striped" id="salesTable">
@@ -88,20 +82,20 @@
             <div class="modal fade" id="detailsModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5>Sale Details</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" id="detailBody"></div></div></div></div>
         </div>
 
-        <!-- ==================== Ingredients Tab ==================== -->
+        <!-- Ingredients Tab -->
         <div class="tab-pane fade" id="ingredients">
             <h4 class="mt-3">Log Ingredient Purchase</h4>
             <form id="ingredientForm" class="card p-3 mb-3">
-                <div class="mb-2"><input type="text" id="ingName" class="form-control" placeholder="Ingredient (e.g., Pork belly)" required disabled></div>
+                <div class="mb-2"><input type="text" id="ingName" class="form-control" placeholder="Ingredient (e.g., Pork belly)" required></div>
                 <div class="row g-2 mb-2">
-                    <div class="col-6"><input type="text" id="ingQty" class="form-control" placeholder="Qty (e.g., 2 kg)" required disabled></div>
-                    <div class="col-6"><input type="number" id="ingPrice" class="form-control" placeholder="Price (₱)" step="0.01" required disabled></div>
+                    <div class="col-6"><input type="text" id="ingQty" class="form-control" placeholder="Qty (e.g., 2 kg)" required></div>
+                    <div class="col-6"><input type="number" id="ingPrice" class="form-control" placeholder="Price (₱)" step="0.01" required></div>
                 </div>
                 <div class="row g-2 mb-2">
-                    <div class="col-6"><input type="date" id="ingDate" class="form-control" required disabled></div>
-                    <div class="col-6"><input type="text" id="ingSupplier" class="form-control" placeholder="Supplier (optional)" disabled></div>
+                    <div class="col-6"><input type="date" id="ingDate" class="form-control" required></div>
+                    <div class="col-6"><input type="text" id="ingSupplier" class="form-control" placeholder="Supplier (optional)"></div>
                 </div>
-                <button class="btn btn-danger w-100" type="submit" disabled>Add Purchase</button>
+                <button class="btn btn-danger w-100" type="submit">Add Purchase</button>
             </form>
             <div class="table-responsive" style="max-height: 50vh; overflow-y: auto;">
                 <table class="table table-sm" id="ingredientsTable">
@@ -111,13 +105,13 @@
             </div>
         </div>
 
-        <!-- ==================== Reports Tab ==================== -->
+        <!-- Reports Tab -->
         <div class="tab-pane fade" id="reports">
             <h4 class="mt-3">Profit Report</h4>
             <div class="row g-2 mb-3">
-                <div class="col-5"><input type="date" id="reportFrom" class="form-control" disabled></div>
-                <div class="col-5"><input type="date" id="reportTo" class="form-control" disabled></div>
-                <div class="col-2"><button id="calcReport" class="btn btn-primary w-100" disabled>Go</button></div>
+                <div class="col-5"><input type="date" id="reportFrom" class="form-control"></div>
+                <div class="col-5"><input type="date" id="reportTo" class="form-control"></div>
+                <div class="col-2"><button id="calcReport" class="btn btn-primary w-100">Go</button></div>
             </div>
             <div class="row text-white text-center mb-4">
                 <div class="col-4"><div class="card bg-success p-2"><h6>Sales</h6><h4 id="rSales">₱0</h4></div></div>
@@ -126,110 +120,39 @@
             </div>
             <hr>
             <div class="d-grid gap-2">
-                <button id="exportData" class="btn btn-outline-secondary" disabled>📤 Export Backup (JSON)</button>
-                <label class="btn btn-outline-secondary" for="importFile" disabled>📥 Import Backup</label>
-                <input type="file" id="importFile" accept=".json" class="d-none" disabled>
+                <button id="exportData" class="btn btn-outline-secondary">📤 Export Backup (JSON)</button>
+                <label class="btn btn-outline-secondary" for="importFile">📥 Import Backup</label>
+                <input type="file" id="importFile" accept=".json" class="d-none">
+                <button id="clearData" class="btn btn-outline-danger mt-2">🗑️ Clear All Data</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const dbStatusEl = document.getElementById('dbStatus');
-        const resetBtn = document.getElementById('resetDB');
-        let db = null;
-        let dbReady = false;
+        // ==================== localStorage Data Layer ====================
+        const STORAGE_KEY = 'clarks_sisig';
 
-        function setUIEnabled(enabled) {
-            document.querySelectorAll('.menu-btn, #amountPaid, #submitSale, #filterSales, #ingredientForm button[type="submit"], #calcReport, #exportData')
-                .forEach(el => el.disabled = !enabled);
-            document.querySelectorAll('#salesFrom, #salesTo, #ingName, #ingQty, #ingPrice, #ingDate, #ingSupplier, #reportFrom, #reportTo')
-                .forEach(el => el.disabled = !enabled);
-        }
-        setUIEnabled(false);
-
-        // ========== DB Open with timeout & blocked detection ==========
-        function initDB() {
-            return new Promise((resolve, reject) => {
-                let openTimeout;
-                try {
-                    const request = indexedDB.open('ClarksSisigDB', 3);  // version 3 force upgrade
-                    
-                    request.onerror = (e) => {
-                        clearTimeout(openTimeout);
-                        const msg = e.target.error ? e.target.error.message : 'Unknown error';
-                        dbStatusEl.innerHTML = ❌ DB error: ${msg} <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>;
-                        dbStatusEl.className = 'bg-danger text-white';
-                        reject(e);
-                    };
-                    
-                    request.onblocked = (e) => {
-                        clearTimeout(openTimeout);
-                        dbStatusEl.innerHTML = '⛔ DB blocked! Another tab may have it open. Tap Reset DB. <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>';
-                        dbStatusEl.className = 'bg-danger text-white';
-                        reject(new Error('Blocked'));
-                    };
-                    
-                    request.onupgradeneeded = (e) => {
-                        const db = e.target.result;
-                        // Clean up old stores
-                        const names = [...db.objectStoreNames];
-                        names.forEach(n => db.deleteObjectStore(n));
-                        
-                        const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
-                        salesStore.createIndex('date', 'saleDate', { unique: false });
-                        
-                        const itemsStore = db.createObjectStore('saleItems', { autoIncrement: true });
-                        itemsStore.createIndex('saleId', 'saleId', { unique: false });
-                        
-                        db.createObjectStore('ingredients', { keyPath: 'id', autoIncrement: true });
-                    };
-                    
-                    request.onsuccess = (e) => {
-                        clearTimeout(openTimeout);
-                        db = e.target.result;
-                        dbReady = true;
-                        dbStatusEl.innerHTML = '✅ Ready <button class="btn btn-sm btn-outline-light ms-2" id="resetDB">Reset DB</button>';
-                        dbStatusEl.className = 'bg-success text-white';
-                        setUIEnabled(true);
-                        refreshSalesList();
-                        refreshIngredientsList();
-                        resolve();
-                    };
-
-                    openTimeout = setTimeout(() => {
-                        if (!dbReady) {
-                            dbStatusEl.innerHTML = '⌛ Timeout opening DB. Tap Reset DB. <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>';
-                            dbStatusEl.className = 'bg-danger text-white';
-                            reject(new Error('Timeout'));
-                        }
-                    }, 10000);
-                } catch (err) {
-                    clearTimeout(openTimeout);
-                    dbStatusEl.innerHTML = ❌ Exception: ${err.message} <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>;
-                    dbStatusEl.className = 'bg-danger text-white';
-                    reject(err);
-                }
-            });
+        function getData() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return { sales: [], saleItems: [], ingredients: [] };
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                return { sales: [], saleItems: [], ingredients: [] };
+            }
         }
 
-        // ========== Reset DB ==========
-        resetBtn.addEventListener('click', () => {
-            if (db) { db.close(); db = null; dbReady = false; }
-            const delRequest = indexedDB.deleteDatabase('ClarksSisigDB');
-            delRequest.onsuccess = () => {
-                dbStatusEl.innerHTML = '🔄 Database deleted. Reloading…';
-                location.reload();
-            };
-            delRequest.onerror = () => {
-                dbStatusEl.innerHTML = '❌ Could not delete. Clear site data manually.';
-            };
-            delRequest.onblocked = () => {
-                dbStatusEl.innerHTML = '⛔ Delete blocked. Close all tabs with this site.';
-            };
-        });
+        function saveData(data) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        }
 
-        // ========== POS Cart ==========
+        // Generate unique IDs using timestamp + random
+        function genId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        // ==================== Application State ====================
         let cart = [];
         const cartTable = document.querySelector('#cartTable tbody');
         const cartTotalSpan = document.getElementById('cartTotal');
@@ -255,6 +178,7 @@
             cartTotalSpan.textContent = ₱${total.toFixed(2)};
             computeChange();
         }
+
         function computeChange() {
             const total = parseFloat(cartTotalSpan.textContent.replace('₱','')) || 0;
             const paid = parseFloat(amountPaidInput.value) || 0;
@@ -263,8 +187,9 @@
             changeSpan.classList.toggle('text-danger', change < 0);
         }
 
+        // ==================== Event Handling ====================
         document.addEventListener('click', e => {
-            if (!dbReady) { alert('Please wait until "✅ Ready" appears.'); return; }
+            // Menu buttons
             if (e.target.classList.contains('menu-btn')) {
                 const name = e.target.dataset.item;
                 const price = parseFloat(e.target.dataset.price);
@@ -272,49 +197,108 @@
                 if (existing) existing.qty++; else cart.push({ name, price, qty: 1 });
                 renderCart();
             }
+            // Remove from cart
             if (e.target.classList.contains('remove')) {
                 const idx = e.target.dataset.index;
                 cart.splice(idx, 1);
                 renderCart();
             }
+            // Submit sale
             if (e.target.id === 'submitSale') {
                 if (cart.length === 0) return alert('Cart is empty.');
                 const total = parseFloat(cartTotalSpan.textContent.replace('₱',''));
                 const paid = parseFloat(amountPaidInput.value);
                 if (isNaN(paid) || paid < total) return alert('Insufficient payment.');
                 const change = paid - total;
-                const sale = { saleDate: new Date().toISOString(), totalAmount: total, amountPaid: paid, changeGiven: change };
-                const tx = db.transaction(['sales', 'saleItems'], 'readwrite');
-                const salesStore = tx.objectStore('sales');
-                const itemsStore = tx.objectStore('saleItems');
-                const saleReq = salesStore.add(sale);
-                saleReq.onsuccess = () => {
-                    const saleId = saleReq.result;
-                    cart.forEach(item => itemsStore.add({ saleId, itemName: item.name, unitPrice: item.price, quantity: item.qty, lineTotal: item.price * item.qty }));
-                    tx.oncomplete = () => {
-                        showReceipt(sale, cart);
-                        cart = []; renderCart();
-                        amountPaidInput.value = ''; changeSpan.textContent = '₱0.00';
-                        saleMessageDiv.innerHTML = '<div class="alert alert-success py-1">Sale recorded!</div>';
-                        setTimeout(() => saleMessageDiv.innerHTML = '', 4000);
-                        refreshSalesList();
-                    };
+
+                const saleId = genId();
+                const sale = {
+                    id: saleId,
+                    saleDate: new Date().toISOString(),
+                    totalAmount: total,
+                    amountPaid: paid,
+                    changeGiven: change
                 };
+
+                const data = getData();
+                data.sales.push(sale);
+                cart.forEach(item => {
+                    data.saleItems.push({
+                        id: genId(),
+                        saleId: saleId,
+                        itemName: item.name,
+                        unitPrice: item.price,
+                        quantity: item.qty,
+                        lineTotal: item.price * item.qty
+                    });
+                });
+                saveData(data);
+
+                // Show receipt
+                showReceipt(sale, cart);
+                cart = [];
+                renderCart();
+                amountPaidInput.value = '';
+                changeSpan.textContent = '₱0.00';
+                saleMessageDiv.innerHTML = '<div class="alert alert-success py-1">Sale recorded!</div>';
+                setTimeout(() => saleMessageDiv.innerHTML = '', 4000);
+                refreshSalesList();
             }
+            // View sale details
             if (e.target.classList.contains('view-details')) {
-                const id = parseInt(e.target.dataset.id);
-                const tx = db.transaction('saleItems', 'readonly');
-                tx.objectStore('saleItems').index('saleId').getAll(id).onsuccess = (e) => {
-                    const items = e.target.result;
-                    let html = '<ul>';
-                    items.forEach(it => html += <li>${it.itemName} x ${it.quantity} = ₱${it.lineTotal.toFixed(2)}</li>);
-                    html += '</ul>';
-                    document.getElementById('detailBody').innerHTML = html;
-                    new bootstrap.Modal(document.getElementById('detailsModal')).show();
-                };
+                const saleId = e.target.dataset.id;
+                const data = getData();
+                const items = data.saleItems.filter(si => si.saleId === saleId);
+                let html = '<ul>';
+                items.forEach(it => html += <li>${it.itemName} x ${it.quantity} = ₱${it.lineTotal.toFixed(2)}</li>);
+                html += '</ul>';
+                document.getElementById('detailBody').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('detailsModal')).show();
             }
+            // Filter sales
             if (e.target.id === 'filterSales') {
                 refreshSalesList(document.getElementById('salesFrom').value, document.getElementById('salesTo').value);
+            }
+            // Calculate report
+            if (e.target.id === 'calcReport') {
+                const from = document.getElementById('reportFrom').value;
+                const to = document.getElementById('reportTo').value;
+                const data = getData();
+                let filteredSales = data.sales;
+                let filteredIngredients = data.ingredients;
+                if (from) {
+                    filteredSales = filteredSales.filter(s => s.saleDate >= from);
+                    filteredIngredients = filteredIngredients.filter(i => i.date >= from);
+                }
+                if (to) {
+                    filteredSales = filteredSales.filter(s => s.saleDate <= to + 'T23:59:59');
+                    filteredIngredients = filteredIngredients.filter(i => i.date <= to);
+                }
+                const totalSales = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
+                const totalCost = filteredIngredients.reduce((sum, i) => sum + i.price, 0);
+                document.getElementById('rSales').textContent = ₱${totalSales.toFixed(2)};
+                document.getElementById('rCosts').textContent = ₱${totalCost.toFixed(2)};
+                document.getElementById('rProfit').textContent = ₱${(totalSales - totalCost).toFixed(2)};
+            }
+            // Export backup
+            if (e.target.id === 'exportData') {
+                const data = getData();
+                const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+            // Clear all data
+            if (e.target.id === 'clearData') {
+                if (confirm('DELETE ALL DATA? This cannot be undone.')) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    alert('All data cleared.');
+                    refreshSalesList();
+                    refreshIngredientsList();
+                }
             }
         });
 
@@ -328,6 +312,45 @@
             if (e.target.id === 'amountPaid') computeChange();
         });
 
+        // Ingredient form
+        document.getElementById('ingredientForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const ingredient = {
+                id: genId(),
+                ingredient: document.getElementById('ingName').value.trim(),
+                quantity: document.getElementById('ingQty').value.trim(),
+                price: parseFloat(document.getElementById('ingPrice').value),
+                date: document.getElementById('ingDate').value,
+                supplier: document.getElementById('ingSupplier').value.trim()
+            };
+            if (!ingredient.ingredient || !ingredient.quantity || isNaN(ingredient.price)) {
+                return alert('Fill all required fields.');
+            }
+            const data = getData();
+            data.ingredients.push(ingredient);
+            saveData(data);
+            e.target.reset();
+            refreshIngredientsList();
+        });
+
+        // Import backup
+        document.getElementById('importFile').addEventListener('change', async e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const text = await file.text();
+            try {
+                const backup = JSON.parse(text);
+                if (!backup.sales || !backup.saleItems || !backup.ingredients) throw new Error('Invalid');
+                saveData(backup);
+                alert('Backup imported successfully!');
+                refreshSalesList();
+                refreshIngredientsList();
+            } catch (ex) {
+                alert('Invalid backup file.');
+            }
+            e.target.value = '';
+        });
+
         function showReceipt(sale, items) {
             const date = new Date(sale.saleDate).toLocaleString();
             let receiptHtml = <div style="font-family:monospace;max-width:300px;margin:auto;padding:10px;border:1px dashed #000;"><h5 style="text-align:center;">Clark's Crispy Sisig Bagnet</h5><p style="text-align:center;">${date}</p><hr><table width="100%">;
@@ -339,121 +362,55 @@
             receiptDiv.onclick = () => window.print();
         }
 
-        // ========== Sales History ==========
         function refreshSalesList(from = '', to = '') {
-            if (!dbReady) return;
-            const tx = db.transaction('sales', 'readonly');
-            tx.objectStore('sales').getAll().onsuccess = (e) => {
-                let sales = e.target.result;
-                if (from) sales = sales.filter(s => s.saleDate >= from);
-                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
-                sales.sort((a,b) => new Date(b.saleDate) - new Date(a.saleDate));
-                const tbody = document.querySelector('#salesTable tbody');
-                tbody.innerHTML = '';
-                sales.forEach(s => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = <td class="small">${new Date(s.saleDate).toLocaleString('en-PH',{hour12:true})}</td><td class="text-end">₱${s.totalAmount.toFixed(2)}</td><td class="text-end">₱${s.amountPaid.toFixed(2)}</td><td class="text-end">₱${s.changeGiven.toFixed(2)}</td><td><button class="btn btn-sm btn-outline-info view-details" data-id="${s.id}">👁️</button></td>;
-                    tbody.appendChild(row);
-                });
-            };
+            const data = getData();
+            let sales = data.sales;
+            if (from) sales = sales.filter(s => s.saleDate >= from);
+            if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
+            sales.sort((a,b) => new Date(b.saleDate) - new Date(a.saleDate));
+            const tbody = document.querySelector('#salesTable tbody');
+            tbody.innerHTML = '';
+            sales.forEach(s => {
+                const row = document.createElement('tr');
+                row.innerHTML = <td class="small">${new Date(s.saleDate).toLocaleString('en-PH',{hour12:true})}</td><td class="text-end">₱${s.totalAmount.toFixed(2)}</td><td class="text-end">₱${s.amountPaid.toFixed(2)}</td><td class="text-end">₱${s.changeGiven.toFixed(2)}</td><td><button class="btn btn-sm btn-outline-info view-details" data-id="${s.id}">👁️</button></td>;
+                tbody.appendChild(row);
+            });
         }
-
-        // ========== Ingredients ==========
-        document.getElementById('ingredientForm').addEventListener('submit', e => {
-            e.preventDefault();
-            if (!dbReady) return alert('Database not ready.');
-            const data = {
-                ingredient: document.getElementById('ingName').value.trim(),
-                quantity: document.getElementById('ingQty').value.trim(),
-                price: parseFloat(document.getElementById('ingPrice').value),
-                date: document.getElementById('ingDate').value,
-                supplier: document.getElementById('ingSupplier').value.trim()
-            };
-            if (!data.ingredient || !data.quantity || isNaN(data.price)) return alert('Fill all required fields.');
-            const tx = db.transaction('ingredients', 'readwrite');
-            tx.objectStore('ingredients').add(data);
-            tx.oncomplete = () => { e.target.reset(); refreshIngredientsList(); };
-        });
 
         function refreshIngredientsList() {
-            if (!dbReady) return;
-            const tx = db.transaction('ingredients', 'readonly');
-            tx.objectStore('ingredients').getAll().onsuccess = (e) => {
-                const items = e.target.result.sort((a,b) => new Date(b.date) - new Date(a.date));
-                const tbody = document.querySelector('#ingredientsTable tbody');
-                tbody.innerHTML = '';
-                items.forEach(it => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = <td>${it.date}</td><td>${it.ingredient}</td><td>${it.quantity}</td><td class="text-end">₱${it.price.toFixed(2)}</td>;
-                    tbody.appendChild(row);
-                });
-            };
+            const data = getData();
+            const items = data.ingredients.sort((a,b) => new Date(b.date) - new Date(a.date));
+            const tbody = document.querySelector('#ingredientsTable tbody');
+            tbody.innerHTML = '';
+            items.forEach(it => {
+                const row = document.createElement('tr');
+                row.innerHTML = <td>${it.date}</td><td>${it.ingredient}</td><td>${it.quantity}</td><td class="text-end">₱${it.price.toFixed(2)}</td>;
+                tbody.appendChild(row);
+            });
         }
 
-        // ========== Reports ==========
-        document.getElementById('calcReport').addEventListener('click', () => {
-            if (!dbReady) return alert('Database not ready.');
-            const from = document.getElementById('reportFrom').value;
-            const to = document.getElementById('reportTo').value;
-            db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = (e) => {
-                let sales = e.target.result;
-                if (from) sales = sales.filter(s => s.saleDate >= from);
-                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
-                const totalSales = sales.reduce((sum,s) => sum + s.totalAmount, 0);
-                db.transaction('ingredients', 'readonly').objectStore('ingredients').getAll().onsuccess = (e) => {
-                    let ings = e.target.result;
-                    if (from) ings = ings.filter(i => i.date >= from);
-                    if (to) ings = ings.filter(i => i.date <= to);
-                    const totalCost = ings.reduce((sum,i) => sum + i.price, 0);
-                    document.getElementById('rSales').textContent = ₱${totalSales.toFixed(2)};
-                    document.getElementById('rCosts').textContent = ₱${totalCost.toFixed(2)};
-                    document.getElementById('rProfit').textContent = ₱${(totalSales - totalCost).toFixed(2)};
-                };
-            };
-        });
+        // Initial load
+        refreshSalesList();
+        refreshIngredientsList();
 
-        // ========== Backup & Import ==========
-        document.getElementById('exportData').addEventListener('click', async () => {
-            if (!dbReady) return;
-            const sales = await new Promise(r => db.transaction('sales','readonly').objectStore('sales').getAll().onsuccess=e=>r(e.target.result));
-            const items = await new Promise(r => db.transaction('saleItems','readonly').objectStore('saleItems').getAll().onsuccess=e=>r(e.target.result));
-            const ings = await new Promise(r => db.transaction('ingredients','readonly').objectStore('ingredients').getAll().onsuccess=e=>r(e.target.result));
-            const blob = new Blob([JSON.stringify({sales,items,ings})], {type:'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json; a.click();
-        });
-
-        document.getElementById('importFile').addEventListener('change', async e => {
-            if (!dbReady) return;
-            const file = e.target.files[0]; if(!file) return;
-            const text = await file.text();
-            try {
-                const backup = JSON.parse(text);
-                const tx = db.transaction(['sales','saleItems','ingredients'],'readwrite');
-                tx.objectStore('sales').clear(); tx.objectStore('saleItems').clear(); tx.objectStore('ingredients').clear();
-                backup.sales.forEach(s=> tx.objectStore('sales').add(s));
-                backup.saleItems.forEach(si=> tx.objectStore('saleItems').add(si));
-                backup.ingredients.forEach(i=> tx.objectStore('ingredients').add(i));
-                tx.oncomplete = () => { alert('Imported!'); refreshSalesList(); refreshIngredientsList(); };
-            } catch(ex) { alert('Invalid backup file.'); }
-            e.target.value = '';
-        });
-
-        // ========== PWA Install ==========
+        // ==================== PWA Install ====================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', e => {
-            e.preventDefault(); deferredPrompt = e;
+            e.preventDefault();
+            deferredPrompt = e;
             document.getElementById('installBtn').style.display = 'inline-block';
         });
         document.getElementById('installBtn').addEventListener('click', () => {
-            if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(()=> deferredPrompt=null); }
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+            }
         });
 
+        // Service worker registration (for caching only)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => dbStatusEl.textContent += ' SW fail');
+            navigator.serviceWorker.register('sw.js').catch(() => {});
         }
-
-        // ========== Start everything ==========
-        initDB().catch(()=>{});
     </script>
 </body>
 </html>
