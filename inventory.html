@@ -19,12 +19,11 @@
         .card { border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .menu-btn { font-size: 1.1rem; padding: 15px; border-radius: 12px; margin-bottom: 8px; }
         .install-btn { display: none; }
-        #dbStatus { position: fixed; top: 56px; left: 0; right: 0; z-index: 1030; text-align: center; padding: 4px; font-weight: bold; }
+        #dbStatus { position: fixed; top: 56px; left: 0; right: 0; z-index: 1030; text-align: center; padding: 4px; font-weight: bold; word-break: break-all; }
         @media (display-mode: standalone) { body { padding-top: 0; } }
     </style>
 </head>
 <body>
-    <!-- DB Status Bar -->
     <div id="dbStatus" class="bg-warning text-dark">⏳ Loading database…</div>
 
     <nav class="navbar navbar-dark fixed-top">
@@ -34,7 +33,6 @@
         </div>
     </nav>
 
-    <!-- Tabs -->
     <ul class="nav nav-tabs justify-content-around" id="mainTab" role="tablist">
         <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#pos">🛒 POS</a></li>
         <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#sales">📋 Sales</a></li>
@@ -135,10 +133,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // ---------- Global app state ----------
+        const dbStatusEl = document.getElementById('dbStatus');
         let db = null;
         let dbReady = false;
-        const dbStatusEl = document.getElementById('dbStatus');
 
         function setUIEnabled(enabled) {
             document.querySelectorAll('.menu-btn, #amountPaid, #submitSale, #filterSales, #ingredientForm button[type="submit"], #calcReport, #exportData')
@@ -146,45 +143,51 @@
             document.querySelectorAll('#salesFrom, #salesTo, #ingName, #ingQty, #ingPrice, #ingDate, #ingSupplier, #reportFrom, #reportTo')
                 .forEach(el => el.disabled = !enabled);
         }
-        setUIEnabled(false); // start disabled
+        setUIEnabled(false);
 
-        // ---------- IndexedDB Setup ----------
         function initDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open('ClarksSisigDB', 2);
-                request.onupgradeneeded = e => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains('sales')) {
-                        const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
-                        salesStore.createIndex('date', 'saleDate', { unique: false });
-                    }
-                    if (!db.objectStoreNames.contains('saleItems')) {
-                        const itemsStore = db.createObjectStore('saleItems', { autoIncrement: true });
-                        itemsStore.createIndex('saleId', 'saleId', { unique: false });
-                    }
-                    if (!db.objectStoreNames.contains('ingredients')) {
-                        db.createObjectStore('ingredients', { keyPath: 'id', autoIncrement: true });
-                    }
-                };
-                request.onsuccess = e => {
-                    db = e.target.result;
-                    dbReady = true;
-                    dbStatusEl.textContent = '✅ Ready';
-                    dbStatusEl.className = 'bg-success text-white';
-                    setUIEnabled(true);
-                    refreshSalesList();
-                    refreshIngredientsList();
-                    resolve();
-                };
-                request.onerror = e => {
-                    dbStatusEl.textContent = '❌ Database error – please allow storage.';
+                try {
+                    const request = indexedDB.open('ClarksSisigDB', 2);
+                    request.onerror = (e) => {
+                        const msg = e.target.error ? e.target.error.message : 'Unknown error';
+                        dbStatusEl.textContent = '❌ DB error: ' + msg;
+                        dbStatusEl.className = 'bg-danger text-white';
+                        reject(e);
+                    };
+                    request.onsuccess = (e) => {
+                        db = e.target.result;
+                        dbReady = true;
+                        dbStatusEl.textContent = '✅ Ready';
+                        dbStatusEl.className = 'bg-success text-white';
+                        setUIEnabled(true);
+                        refreshSalesList();
+                        refreshIngredientsList();
+                        resolve();
+                    };
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('sales')) {
+                            const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+                            salesStore.createIndex('date', 'saleDate', { unique: false });
+                        }
+                        if (!db.objectStoreNames.contains('saleItems')) {
+                            const itemsStore = db.createObjectStore('saleItems', { autoIncrement: true });
+                            itemsStore.createIndex('saleId', 'saleId', { unique: false });
+                        }
+                        if (!db.objectStoreNames.contains('ingredients')) {
+                            db.createObjectStore('ingredients', { keyPath: 'id', autoIncrement: true });
+                        }
+                    };
+                } catch (err) {
+                    dbStatusEl.textContent = '❌ Exception: ' + err.message;
                     dbStatusEl.className = 'bg-danger text-white';
-                    reject(e);
-                };
+                    reject(err);
+                }
             });
         }
 
-        // ---------- POS Cart ----------
+        // ========== POS Cart ==========
         let cart = [];
         const cartTable = document.querySelector('#cartTable tbody');
         const cartTotalSpan = document.getElementById('cartTotal');
@@ -210,7 +213,6 @@
             cartTotalSpan.textContent = ₱${total.toFixed(2)};
             computeChange();
         }
-
         function computeChange() {
             const total = parseFloat(cartTotalSpan.textContent.replace('₱','')) || 0;
             const paid = parseFloat(amountPaidInput.value) || 0;
@@ -219,12 +221,8 @@
             changeSpan.classList.toggle('text-danger', change < 0);
         }
 
-        // ---------- Event delegation (so it works even before db ready) ----------
         document.addEventListener('click', e => {
-            if (!dbReady) {
-                alert('Database is still loading. Please wait a moment.');
-                return;
-            }
+            if (!dbReady) { alert('Please wait until "✅ Ready" appears.'); return; }
             if (e.target.classList.contains('menu-btn')) {
                 const name = e.target.dataset.item;
                 const price = parseFloat(e.target.dataset.price);
@@ -243,34 +241,19 @@
                 const paid = parseFloat(amountPaidInput.value);
                 if (isNaN(paid) || paid < total) return alert('Insufficient payment.');
                 const change = paid - total;
-                const sale = {
-                    saleDate: new Date().toISOString(),
-                    totalAmount: total,
-                    amountPaid: paid,
-                    changeGiven: change
-                };
+                const sale = { saleDate: new Date().toISOString(), totalAmount: total, amountPaid: paid, changeGiven: change };
                 const tx = db.transaction(['sales', 'saleItems'], 'readwrite');
                 const salesStore = tx.objectStore('sales');
                 const itemsStore = tx.objectStore('saleItems');
                 const saleReq = salesStore.add(sale);
                 saleReq.onsuccess = () => {
                     const saleId = saleReq.result;
-                    cart.forEach(item => {
-                        itemsStore.add({
-                            saleId,
-                            itemName: item.name,
-                            unitPrice: item.price,
-                            quantity: item.qty,
-                            lineTotal: item.price * item.qty
-                        });
-                    });
+                    cart.forEach(item => itemsStore.add({ saleId, itemName: item.name, unitPrice: item.price, quantity: item.qty, lineTotal: item.price * item.qty }));
                     tx.oncomplete = () => {
                         showReceipt(sale, cart);
-                        cart = [];
-                        renderCart();
-                        amountPaidInput.value = '';
-                        changeSpan.textContent = '₱0.00';
-                        saleMessageDiv.innerHTML = '<div class="alert alert-success py-1">Sale recorded! Tap receipt to print.</div>';
+                        cart = []; renderCart();
+                        amountPaidInput.value = ''; changeSpan.textContent = '₱0.00';
+                        saleMessageDiv.innerHTML = '<div class="alert alert-success py-1">Sale recorded!</div>';
                         setTimeout(() => saleMessageDiv.innerHTML = '', 4000);
                         refreshSalesList();
                     };
@@ -279,11 +262,8 @@
             if (e.target.classList.contains('view-details')) {
                 const id = parseInt(e.target.dataset.id);
                 const tx = db.transaction('saleItems', 'readonly');
-                const store = tx.objectStore('saleItems');
-                const index = store.index('saleId');
-                const req = index.getAll(id);
-                req.onsuccess = () => {
-                    const items = req.result;
+                tx.objectStore('saleItems').index('saleId').getAll(id).onsuccess = (e) => {
+                    const items = e.target.result;
                     let html = '<ul>';
                     items.forEach(it => html += <li>${it.itemName} x ${it.quantity} = ₱${it.lineTotal.toFixed(2)}</li>);
                     html += '</ul>';
@@ -308,10 +288,7 @@
 
         function showReceipt(sale, items) {
             const date = new Date(sale.saleDate).toLocaleString();
-            let receiptHtml = `
-                <div style="font-family: monospace; max-width: 300px; margin: auto; padding: 10px; border: 1px dashed #000;">
-                    <h5 style="text-align:center;">Clark's Crispy Sisig Bagnet</h5>
-                    <p style="text-align:center;">${date}</p><hr><table width="100%">`;
+            let receiptHtml = <div style="font-family:monospace;max-width:300px;margin:auto;padding:10px;border:1px dashed #000;"><h5 style="text-align:center;">Clark's Crispy Sisig Bagnet</h5><p style="text-align:center;">${date}</p><hr><table width="100%">;
             items.forEach(item => receiptHtml += <tr><td>${item.name} x${item.qty}</td><td align="right">₱${(item.price*item.qty).toFixed(2)}</td></tr>);
             receiptHtml += </table><hr><p>Total: ₱${sale.totalAmount.toFixed(2)}<br>Paid: ₱${sale.amountPaid.toFixed(2)}<br>Change: ₱${sale.changeGiven.toFixed(2)}</p><p style="text-align:center;">Thank you!</p></div>;
             const receiptDiv = document.getElementById('receiptArea');
@@ -320,35 +297,24 @@
             receiptDiv.onclick = () => window.print();
         }
 
-        // ---------- Sales History ----------
-        function refreshSalesList(from = '', to = '') {
+        function refreshSalesList(from='', to='') {
             if (!dbReady) return;
-            const tx = db.transaction('sales', 'readonly');
-            const store = tx.objectStore('sales');
-            const req = store.getAll();
-            req.onsuccess = () => {
-                let sales = req.result;
+            const tx = db.transaction('sales','readonly');
+            tx.objectStore('sales').getAll().onsuccess = (e) => {
+                let sales = e.target.result;
                 if (from) sales = sales.filter(s => s.saleDate >= from);
-                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
-                sales.sort((a,b) => new Date(b.saleDate) - new Date(a.saleDate));
+                if (to) sales = sales.filter(s => s.saleDate <= to+'T23:59:59');
+                sales.sort((a,b)=> new Date(b.saleDate) - new Date(a.saleDate));
                 const tbody = document.querySelector('#salesTable tbody');
                 tbody.innerHTML = '';
                 sales.forEach(s => {
                     const row = document.createElement('tr');
-                    const dateStr = new Date(s.saleDate).toLocaleString('en-PH', { hour12: true });
-                    row.innerHTML = `
-                        <td class="small">${dateStr}</td>
-                        <td class="text-end">₱${s.totalAmount.toFixed(2)}</td>
-                        <td class="text-end">₱${s.amountPaid.toFixed(2)}</td>
-                        <td class="text-end">₱${s.changeGiven.toFixed(2)}</td>
-                        <td><button class="btn btn-sm btn-outline-info view-details" data-id="${s.id}">👁️</button></td>
-                    `;
+                    row.innerHTML = <td class="small">${new Date(s.saleDate).toLocaleString('en-PH',{hour12:true})}</td><td class="text-end">₱${s.totalAmount.toFixed(2)}</td><td class="text-end">₱${s.amountPaid.toFixed(2)}</td><td class="text-end">₱${s.changeGiven.toFixed(2)}</td><td><button class="btn btn-sm btn-outline-info view-details" data-id="${s.id}">👁️</button></td>;
                     tbody.appendChild(row);
                 });
             };
         }
 
-        // ---------- Ingredients ----------
         document.getElementById('ingredientForm').addEventListener('submit', e => {
             e.preventDefault();
             if (!dbReady) return alert('Database not ready.');
@@ -360,7 +326,7 @@
                 supplier: document.getElementById('ingSupplier').value.trim()
             };
             if (!data.ingredient || !data.quantity || isNaN(data.price)) return alert('Fill all required fields.');
-            const tx = db.transaction('ingredients', 'readwrite');
+            const tx = db.transaction('ingredients','readwrite');
             tx.objectStore('ingredients').add(data);
             tx.oncomplete = () => {
                 e.target.reset();
@@ -370,10 +336,9 @@
 
         function refreshIngredientsList() {
             if (!dbReady) return;
-            const tx = db.transaction('ingredients', 'readonly');
-            const req = tx.objectStore('ingredients').getAll();
-            req.onsuccess = () => {
-                const items = req.result.sort((a,b) => new Date(b.date) - new Date(a.date));
+            const tx = db.transaction('ingredients','readonly');
+            tx.objectStore('ingredients').getAll().onsuccess = (e) => {
+                const items = e.target.result.sort((a,b)=> new Date(b.date)-new Date(a.date));
                 const tbody = document.querySelector('#ingredientsTable tbody');
                 tbody.innerHTML = '';
                 items.forEach(it => {
@@ -384,92 +349,67 @@
             };
         }
 
-        // ---------- Reports ----------
         document.getElementById('calcReport').addEventListener('click', () => {
             if (!dbReady) return alert('Database not ready.');
             const from = document.getElementById('reportFrom').value;
             const to = document.getElementById('reportTo').value;
-            const salesTx = db.transaction('sales', 'readonly');
-            const salesReq = salesTx.objectStore('sales').getAll();
-            salesReq.onsuccess = () => {
-                let sales = salesReq.result;
+            db.transaction('sales','readonly').objectStore('sales').getAll().onsuccess = (e) => {
+                let sales = e.target.result;
                 if (from) sales = sales.filter(s => s.saleDate >= from);
-                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
-                const totalSales = sales.reduce((sum, s) => sum + s.totalAmount, 0);
-                const ingTx = db.transaction('ingredients', 'readonly');
-                const ingReq = ingTx.objectStore('ingredients').getAll();
-                ingReq.onsuccess = () => {
-                    let ings = ingReq.result;
+                if (to) sales = sales.filter(s => s.saleDate <= to+'T23:59:59');
+                const totalSales = sales.reduce((sum,s)=> sum+s.totalAmount,0);
+                db.transaction('ingredients','readonly').objectStore('ingredients').getAll().onsuccess = (e) => {
+                    let ings = e.target.result;
                     if (from) ings = ings.filter(i => i.date >= from);
                     if (to) ings = ings.filter(i => i.date <= to);
-                    const totalCost = ings.reduce((sum, i) => sum + i.price, 0);
+                    const totalCost = ings.reduce((sum,i)=> sum+i.price,0);
                     document.getElementById('rSales').textContent = ₱${totalSales.toFixed(2)};
                     document.getElementById('rCosts').textContent = ₱${totalCost.toFixed(2)};
-                    document.getElementById('rProfit').textContent = ₱${(totalSales - totalCost).toFixed(2)};
+                    document.getElementById('rProfit').textContent = ₱${(totalSales-totalCost).toFixed(2)};
                 };
             };
         });
 
-        // ---------- Backup & Import ----------
         document.getElementById('exportData').addEventListener('click', async () => {
-            if (!dbReady) return alert('Database not ready.');
-            const sales = await new Promise(r => { const tx = db.transaction('sales','readonly'); tx.objectStore('sales').getAll().onsuccess = e => r(e.target.result); });
-            const saleItems = await new Promise(r => { const tx = db.transaction('saleItems','readonly'); tx.objectStore('saleItems').getAll().onsuccess = e => r(e.target.result); });
-            const ingredients = await new Promise(r => { const tx = db.transaction('ingredients','readonly'); tx.objectStore('ingredients').getAll().onsuccess = e => r(e.target.result); });
-            const backup = { sales, saleItems, ingredients };
-            const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json; a.click();
-            URL.revokeObjectURL(url);
+            if (!dbReady) return;
+            const sales = await new Promise(r => db.transaction('sales','readonly').objectStore('sales').getAll().onsuccess=e=>r(e.target.result));
+            const items = await new Promise(r => db.transaction('saleItems','readonly').objectStore('saleItems').getAll().onsuccess=e=>r(e.target.result));
+            const ings = await new Promise(r => db.transaction('ingredients','readonly').objectStore('ingredients').getAll().onsuccess=e=>r(e.target.result));
+            const blob = new Blob([JSON.stringify({sales,items,ings})], {type:'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json; a.click();
         });
 
         document.getElementById('importFile').addEventListener('change', async e => {
-            if (!dbReady) return alert('Database not ready.');
-            const file = e.target.files[0];
-            if (!file) return;
+            if (!dbReady) return;
+            const file = e.target.files[0]; if(!file) return;
             const text = await file.text();
             try {
                 const backup = JSON.parse(text);
-                const tx = db.transaction(['sales','saleItems','ingredients'], 'readwrite');
-                tx.objectStore('sales').clear();
-                tx.objectStore('saleItems').clear();
-                tx.objectStore('ingredients').clear();
-                backup.sales.forEach(s => tx.objectStore('sales').add(s));
-                backup.saleItems.forEach(si => tx.objectStore('saleItems').add(si));
-                backup.ingredients.forEach(i => tx.objectStore('ingredients').add(i));
-                tx.oncomplete = () => { alert('Backup imported!'); refreshSalesList(); refreshIngredientsList(); };
-            } catch (err) { alert('Invalid file.'); }
+                const tx = db.transaction(['sales','saleItems','ingredients'],'readwrite');
+                tx.objectStore('sales').clear(); tx.objectStore('saleItems').clear(); tx.objectStore('ingredients').clear();
+                backup.sales.forEach(s=> tx.objectStore('sales').add(s));
+                backup.saleItems.forEach(si=> tx.objectStore('saleItems').add(si));
+                backup.ingredients.forEach(i=> tx.objectStore('ingredients').add(i));
+                tx.oncomplete = () => { alert('Imported!'); refreshSalesList(); refreshIngredientsList(); };
+            } catch(ex) { alert('Invalid backup file.'); }
             e.target.value = '';
         });
 
-        // ---------- PWA Install ----------
+        // PWA Install
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', e => {
-            e.preventDefault();
-            deferredPrompt = e;
+            e.preventDefault(); deferredPrompt = e;
             document.getElementById('installBtn').style.display = 'inline-block';
         });
         document.getElementById('installBtn').addEventListener('click', () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => deferredPrompt = null);
-            }
+            if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(()=> deferredPrompt=null); }
         });
 
-        // ---------- Service Worker ----------
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(() => console.log('SW registered'))
-                .catch(err => {
-                    document.getElementById('dbStatus').textContent += ' ⚠️ Service worker failed.';
-                    console.error('SW error:', err);
-                });
+            navigator.serviceWorker.register('sw.js').catch(err => dbStatusEl.textContent += ' SW fail');
         }
 
-        // ---------- Start everything ----------
-        initDB().catch(() => {
-            // Error already shown by status bar
-        });
+        initDB().catch(()=>{});
     </script>
 </body>
 </html>
