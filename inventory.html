@@ -19,12 +19,14 @@
         .card { border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .menu-btn { font-size: 1.1rem; padding: 15px; border-radius: 12px; margin-bottom: 8px; }
         .install-btn { display: none; }
-        #dbStatus { position: fixed; top: 56px; left: 0; right: 0; z-index: 1030; text-align: center; padding: 4px; font-weight: bold; word-break: break-all; }
+        #dbStatus { position: fixed; top: 56px; left: 0; right: 0; z-index: 1030; text-align: center; padding: 6px; font-weight: bold; word-break: break-all; }
         @media (display-mode: standalone) { body { padding-top: 0; } }
     </style>
 </head>
 <body>
-    <div id="dbStatus" class="bg-warning text-dark">⏳ Loading database…</div>
+    <div id="dbStatus" class="bg-warning text-dark">
+        ⏳ Loading database… <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>
+    </div>
 
     <nav class="navbar navbar-dark fixed-top">
         <div class="container-fluid">
@@ -41,7 +43,7 @@
     </ul>
 
     <div class="tab-content container pb-4">
-        <!-- POS Tab -->
+        <!-- ==================== POS Tab ==================== -->
         <div class="tab-pane fade show active" id="pos">
             <h4 class="mt-3 mb-2">Quick Menu</h4>
             <div class="d-grid gap-1 mb-3">
@@ -69,7 +71,7 @@
             <div id="receiptArea" class="d-none"></div>
         </div>
 
-        <!-- Sales History Tab -->
+        <!-- ==================== Sales Tab ==================== -->
         <div class="tab-pane fade" id="sales">
             <h4 class="mt-3">Sales History</h4>
             <div class="row g-2 mb-2">
@@ -86,7 +88,7 @@
             <div class="modal fade" id="detailsModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5>Sale Details</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" id="detailBody"></div></div></div></div>
         </div>
 
-        <!-- Ingredients Tab -->
+        <!-- ==================== Ingredients Tab ==================== -->
         <div class="tab-pane fade" id="ingredients">
             <h4 class="mt-3">Log Ingredient Purchase</h4>
             <form id="ingredientForm" class="card p-3 mb-3">
@@ -109,7 +111,7 @@
             </div>
         </div>
 
-        <!-- Reports Tab -->
+        <!-- ==================== Reports Tab ==================== -->
         <div class="tab-pane fade" id="reports">
             <h4 class="mt-3">Profit Report</h4>
             <div class="row g-2 mb-3">
@@ -134,6 +136,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const dbStatusEl = document.getElementById('dbStatus');
+        const resetBtn = document.getElementById('resetDB');
         let db = null;
         let dbReady = false;
 
@@ -145,47 +148,86 @@
         }
         setUIEnabled(false);
 
+        // ========== DB Open with timeout & blocked detection ==========
         function initDB() {
             return new Promise((resolve, reject) => {
+                let openTimeout;
                 try {
-                    const request = indexedDB.open('ClarksSisigDB', 2);
+                    const request = indexedDB.open('ClarksSisigDB', 3);  // version 3 force upgrade
+                    
                     request.onerror = (e) => {
+                        clearTimeout(openTimeout);
                         const msg = e.target.error ? e.target.error.message : 'Unknown error';
-                        dbStatusEl.textContent = '❌ DB error: ' + msg;
+                        dbStatusEl.innerHTML = ❌ DB error: ${msg} <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>;
                         dbStatusEl.className = 'bg-danger text-white';
                         reject(e);
                     };
+                    
+                    request.onblocked = (e) => {
+                        clearTimeout(openTimeout);
+                        dbStatusEl.innerHTML = '⛔ DB blocked! Another tab may have it open. Tap Reset DB. <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>';
+                        dbStatusEl.className = 'bg-danger text-white';
+                        reject(new Error('Blocked'));
+                    };
+                    
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        // Clean up old stores
+                        const names = [...db.objectStoreNames];
+                        names.forEach(n => db.deleteObjectStore(n));
+                        
+                        const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+                        salesStore.createIndex('date', 'saleDate', { unique: false });
+                        
+                        const itemsStore = db.createObjectStore('saleItems', { autoIncrement: true });
+                        itemsStore.createIndex('saleId', 'saleId', { unique: false });
+                        
+                        db.createObjectStore('ingredients', { keyPath: 'id', autoIncrement: true });
+                    };
+                    
                     request.onsuccess = (e) => {
+                        clearTimeout(openTimeout);
                         db = e.target.result;
                         dbReady = true;
-                        dbStatusEl.textContent = '✅ Ready';
+                        dbStatusEl.innerHTML = '✅ Ready <button class="btn btn-sm btn-outline-light ms-2" id="resetDB">Reset DB</button>';
                         dbStatusEl.className = 'bg-success text-white';
                         setUIEnabled(true);
                         refreshSalesList();
                         refreshIngredientsList();
                         resolve();
                     };
-                    request.onupgradeneeded = (e) => {
-                        const db = e.target.result;
-                        if (!db.objectStoreNames.contains('sales')) {
-                            const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
-                            salesStore.createIndex('date', 'saleDate', { unique: false });
+
+                    openTimeout = setTimeout(() => {
+                        if (!dbReady) {
+                            dbStatusEl.innerHTML = '⌛ Timeout opening DB. Tap Reset DB. <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>';
+                            dbStatusEl.className = 'bg-danger text-white';
+                            reject(new Error('Timeout'));
                         }
-                        if (!db.objectStoreNames.contains('saleItems')) {
-                            const itemsStore = db.createObjectStore('saleItems', { autoIncrement: true });
-                            itemsStore.createIndex('saleId', 'saleId', { unique: false });
-                        }
-                        if (!db.objectStoreNames.contains('ingredients')) {
-                            db.createObjectStore('ingredients', { keyPath: 'id', autoIncrement: true });
-                        }
-                    };
+                    }, 10000);
                 } catch (err) {
-                    dbStatusEl.textContent = '❌ Exception: ' + err.message;
+                    clearTimeout(openTimeout);
+                    dbStatusEl.innerHTML = ❌ Exception: ${err.message} <button class="btn btn-sm btn-outline-dark ms-2" id="resetDB">Reset DB</button>;
                     dbStatusEl.className = 'bg-danger text-white';
                     reject(err);
                 }
             });
         }
+
+        // ========== Reset DB ==========
+        resetBtn.addEventListener('click', () => {
+            if (db) { db.close(); db = null; dbReady = false; }
+            const delRequest = indexedDB.deleteDatabase('ClarksSisigDB');
+            delRequest.onsuccess = () => {
+                dbStatusEl.innerHTML = '🔄 Database deleted. Reloading…';
+                location.reload();
+            };
+            delRequest.onerror = () => {
+                dbStatusEl.innerHTML = '❌ Could not delete. Clear site data manually.';
+            };
+            delRequest.onblocked = () => {
+                dbStatusEl.innerHTML = '⛔ Delete blocked. Close all tabs with this site.';
+            };
+        });
 
         // ========== POS Cart ==========
         let cart = [];
@@ -297,14 +339,15 @@
             receiptDiv.onclick = () => window.print();
         }
 
-        function refreshSalesList(from='', to='') {
+        // ========== Sales History ==========
+        function refreshSalesList(from = '', to = '') {
             if (!dbReady) return;
-            const tx = db.transaction('sales','readonly');
+            const tx = db.transaction('sales', 'readonly');
             tx.objectStore('sales').getAll().onsuccess = (e) => {
                 let sales = e.target.result;
                 if (from) sales = sales.filter(s => s.saleDate >= from);
-                if (to) sales = sales.filter(s => s.saleDate <= to+'T23:59:59');
-                sales.sort((a,b)=> new Date(b.saleDate) - new Date(a.saleDate));
+                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
+                sales.sort((a,b) => new Date(b.saleDate) - new Date(a.saleDate));
                 const tbody = document.querySelector('#salesTable tbody');
                 tbody.innerHTML = '';
                 sales.forEach(s => {
@@ -315,6 +358,7 @@
             };
         }
 
+        // ========== Ingredients ==========
         document.getElementById('ingredientForm').addEventListener('submit', e => {
             e.preventDefault();
             if (!dbReady) return alert('Database not ready.');
@@ -326,19 +370,16 @@
                 supplier: document.getElementById('ingSupplier').value.trim()
             };
             if (!data.ingredient || !data.quantity || isNaN(data.price)) return alert('Fill all required fields.');
-            const tx = db.transaction('ingredients','readwrite');
+            const tx = db.transaction('ingredients', 'readwrite');
             tx.objectStore('ingredients').add(data);
-            tx.oncomplete = () => {
-                e.target.reset();
-                refreshIngredientsList();
-            };
+            tx.oncomplete = () => { e.target.reset(); refreshIngredientsList(); };
         });
 
         function refreshIngredientsList() {
             if (!dbReady) return;
-            const tx = db.transaction('ingredients','readonly');
+            const tx = db.transaction('ingredients', 'readonly');
             tx.objectStore('ingredients').getAll().onsuccess = (e) => {
-                const items = e.target.result.sort((a,b)=> new Date(b.date)-new Date(a.date));
+                const items = e.target.result.sort((a,b) => new Date(b.date) - new Date(a.date));
                 const tbody = document.querySelector('#ingredientsTable tbody');
                 tbody.innerHTML = '';
                 items.forEach(it => {
@@ -349,27 +390,29 @@
             };
         }
 
+        // ========== Reports ==========
         document.getElementById('calcReport').addEventListener('click', () => {
             if (!dbReady) return alert('Database not ready.');
             const from = document.getElementById('reportFrom').value;
             const to = document.getElementById('reportTo').value;
-            db.transaction('sales','readonly').objectStore('sales').getAll().onsuccess = (e) => {
+            db.transaction('sales', 'readonly').objectStore('sales').getAll().onsuccess = (e) => {
                 let sales = e.target.result;
                 if (from) sales = sales.filter(s => s.saleDate >= from);
-                if (to) sales = sales.filter(s => s.saleDate <= to+'T23:59:59');
-                const totalSales = sales.reduce((sum,s)=> sum+s.totalAmount,0);
-                db.transaction('ingredients','readonly').objectStore('ingredients').getAll().onsuccess = (e) => {
+                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
+                const totalSales = sales.reduce((sum,s) => sum + s.totalAmount, 0);
+                db.transaction('ingredients', 'readonly').objectStore('ingredients').getAll().onsuccess = (e) => {
                     let ings = e.target.result;
                     if (from) ings = ings.filter(i => i.date >= from);
                     if (to) ings = ings.filter(i => i.date <= to);
-                    const totalCost = ings.reduce((sum,i)=> sum+i.price,0);
+                    const totalCost = ings.reduce((sum,i) => sum + i.price, 0);
                     document.getElementById('rSales').textContent = ₱${totalSales.toFixed(2)};
                     document.getElementById('rCosts').textContent = ₱${totalCost.toFixed(2)};
-                    document.getElementById('rProfit').textContent = ₱${(totalSales-totalCost).toFixed(2)};
+                    document.getElementById('rProfit').textContent = ₱${(totalSales - totalCost).toFixed(2)};
                 };
             };
         });
 
+        // ========== Backup & Import ==========
         document.getElementById('exportData').addEventListener('click', async () => {
             if (!dbReady) return;
             const sales = await new Promise(r => db.transaction('sales','readonly').objectStore('sales').getAll().onsuccess=e=>r(e.target.result));
@@ -395,7 +438,7 @@
             e.target.value = '';
         });
 
-        // PWA Install
+        // ========== PWA Install ==========
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', e => {
             e.preventDefault(); deferredPrompt = e;
@@ -409,6 +452,7 @@
             navigator.serviceWorker.register('sw.js').catch(err => dbStatusEl.textContent += ' SW fail');
         }
 
+        // ========== Start everything ==========
         initDB().catch(()=>{});
     </script>
 </body>
