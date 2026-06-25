@@ -25,7 +25,7 @@
     <nav class="navbar navbar-dark fixed-top">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">🐷 Clark's Inventory</span>
-            <button class="btn btn-outline-light install-btn" id="installBtn">📲 Install App</button>
+            <button class="btn btn-outline-light install-btn" id="installBtn" type="button">📲 Install App</button>
         </div>
     </nav>
 
@@ -41,10 +41,10 @@
         <div class="tab-pane fade show active" id="pos">
             <h4 class="mt-3 mb-2">Quick Menu</h4>
             <div class="d-grid gap-1 mb-3">
-                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Pork Sisig Full" data-price="100">Crispy Pork Sisig Full - ₱100</button>
-                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Bagnet" data-price="100">Crispy Bagnet - ₱100</button>
-                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Sisig with Rice" data-price="59">Crispy Sisig with Rice - ₱59</button>
-                <button class="btn btn-outline-primary menu-btn" data-item="Tofu Sisig" data-price="49">Tofu Sisig - ₱49</button>
+                <button class="btn btn-outline-primary menu-btn" type="button" data-item="Crispy Pork Sisig Full" data-price="100">Crispy Pork Sisig Full - ₱100</button>
+                <button class="btn btn-outline-primary menu-btn" type="button" data-item="Crispy Bagnet" data-price="100">Crispy Bagnet - ₱100</button>
+                <button class="btn btn-outline-primary menu-btn" type="button" data-item="Crispy Sisig with Rice" data-price="59">Crispy Sisig with Rice - ₱59</button>
+                <button class="btn btn-outline-primary menu-btn" type="button" data-item="Tofu Sisig" data-price="49">Tofu Sisig - ₱49</button>
             </div>
             <h5>Current Order</h5>
             <div class="table-responsive">
@@ -60,7 +60,7 @@
             <div class="d-flex justify-content-between mb-3">
                 <span class="fw-bold">Change:</span> <span id="changeAmount" class="text-success fw-bold fs-5">₱0.00</span>
             </div>
-            <button class="btn btn-success btn-lg w-100 mb-2" id="submitSale">✅ Submit Sale</button>
+            <button class="btn btn-success btn-lg w-100 mb-2" id="submitSale" type="button">✅ Submit Sale</button>
             <div id="saleMessage"></div>
             <div id="receiptArea" class="d-none"></div>
         </div>
@@ -71,7 +71,7 @@
             <div class="row g-2 mb-2">
                 <div class="col-5"><input type="date" id="salesFrom" class="form-control" placeholder="From"></div>
                 <div class="col-5"><input type="date" id="salesTo" class="form-control" placeholder="To"></div>
-                <div class="col-2"><button id="filterSales" class="btn btn-primary w-100">🔍</button></div>
+                <div class="col-2"><button id="filterSales" class="btn btn-primary w-100" type="button">🔍</button></div>
             </div>
             <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
                 <table class="table table-sm table-striped" id="salesTable">
@@ -111,7 +111,7 @@
             <div class="row g-2 mb-3">
                 <div class="col-5"><input type="date" id="reportFrom" class="form-control"></div>
                 <div class="col-5"><input type="date" id="reportTo" class="form-control"></div>
-                <div class="col-2"><button id="calcReport" class="btn btn-primary w-100">Go</button></div>
+                <div class="col-2"><button id="calcReport" class="btn btn-primary w-100" type="button">Go</button></div>
             </div>
             <div class="row text-white text-center mb-4">
                 <div class="col-4"><div class="card bg-success p-2"><h6>Sales</h6><h4 id="rSales">₱0</h4></div></div>
@@ -120,39 +120,38 @@
             </div>
             <hr>
             <div class="d-grid gap-2">
-                <button id="exportData" class="btn btn-outline-secondary">📤 Export Backup (JSON)</button>
+                <button id="exportData" class="btn btn-outline-secondary" type="button">📤 Export Backup (JSON)</button>
                 <label class="btn btn-outline-secondary" for="importFile">📥 Import Backup</label>
                 <input type="file" id="importFile" accept=".json" class="d-none">
-                <button id="clearData" class="btn btn-outline-danger mt-2">🗑️ Clear All Data</button>
+                <button id="clearData" class="btn btn-outline-danger mt-2" type="button">🗑️ Clear All Data</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // ==================== localStorage Data Layer ====================
+        // Alert on any uncaught error
+        window.onerror = function(msg, url, line) {
+            alert('JS Error: ' + msg + ' at line ' + line);
+        };
+
+        // ==================== localStorage ====================
         const STORAGE_KEY = 'clarks_sisig';
 
         function getData() {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (!raw) return { sales: [], saleItems: [], ingredients: [] };
-            try {
-                return JSON.parse(raw);
-            } catch (e) {
-                return { sales: [], saleItems: [], ingredients: [] };
-            }
+            try { return JSON.parse(raw); } catch(e) { return { sales: [], saleItems: [], ingredients: [] }; }
         }
 
         function saveData(data) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         }
 
-        // Generate unique IDs using timestamp + random
         function genId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
         }
 
-        // ==================== Application State ====================
         let cart = [];
         const cartTable = document.querySelector('#cartTable tbody');
         const cartTotalSpan = document.getElementById('cartTotal');
@@ -171,7 +170,7 @@
                     <td>${item.name}</td>
                     <td><input type="number" class="form-control form-control-sm qty" data-index="${idx}" value="${item.qty}" min="1" style="width:60px"></td>
                     <td class="text-end">₱${lineTotal.toFixed(2)}</td>
-                    <td><button class="btn btn-sm btn-outline-danger remove" data-index="${idx}">&times;</button></td>
+                    <td><button class="btn btn-sm btn-outline-danger remove" data-index="${idx}" type="button">&times;</button></td>
                 `;
                 cartTable.appendChild(row);
             });
@@ -187,122 +186,133 @@
             changeSpan.classList.toggle('text-danger', change < 0);
         }
 
-        // ==================== Event Handling ====================
-        document.addEventListener('click', e => {
-            // Menu buttons
-            if (e.target.classList.contains('menu-btn')) {
-                const name = e.target.dataset.item;
-                const price = parseFloat(e.target.dataset.price);
-                const existing = cart.find(i => i.name === name);
-                if (existing) existing.qty++; else cart.push({ name, price, qty: 1 });
-                renderCart();
-            }
-            // Remove from cart
-            if (e.target.classList.contains('remove')) {
-                const idx = e.target.dataset.index;
-                cart.splice(idx, 1);
-                renderCart();
-            }
-            // Submit sale
-            if (e.target.id === 'submitSale') {
-                if (cart.length === 0) return alert('Cart is empty.');
-                const total = parseFloat(cartTotalSpan.textContent.replace('₱',''));
-                const paid = parseFloat(amountPaidInput.value);
-                if (isNaN(paid) || paid < total) return alert('Insufficient payment.');
-                const change = paid - total;
+        // ==================== Event Delegation ====================
+        document.addEventListener('click', function(e) {
+            try {
+                // Menu buttons
+                if (e.target.classList.contains('menu-btn')) {
+                    const name = e.target.dataset.item;
+                    const price = parseFloat(e.target.dataset.price);
+                    const existing = cart.find(i => i.name === name);
+                    if (existing) existing.qty++; else cart.push({ name, price, qty: 1 });
+                    renderCart();
+                    return;
+                }
+                // Remove item
+                if (e.target.classList.contains('remove')) {
+                    const idx = e.target.dataset.index;
+                    cart.splice(idx, 1);
+                    renderCart();
+                    return;
+                }
+                // Submit sale
+                if (e.target.id === 'submitSale') {
+                    if (cart.length === 0) { alert('Cart is empty.'); return; }
+                    const total = parseFloat(cartTotalSpan.textContent.replace('₱',''));
+                    const paid = parseFloat(amountPaidInput.value);
+                    if (isNaN(paid) || paid < total) { alert('Insufficient payment.'); return; }
+                    const change = paid - total;
 
-                const saleId = genId();
-                const sale = {
-                    id: saleId,
-                    saleDate: new Date().toISOString(),
-                    totalAmount: total,
-                    amountPaid: paid,
-                    changeGiven: change
-                };
+                    const saleId = genId();
+                    const sale = {
+                        id: saleId,
+                        saleDate: new Date().toISOString(),
+                        totalAmount: total,
+                        amountPaid: paid,
+                        changeGiven: change
+                    };
 
-                const data = getData();
-                data.sales.push(sale);
-                cart.forEach(item => {
-                    data.saleItems.push({
-                        id: genId(),
-                        saleId: saleId,
-                        itemName: item.name,
-                        unitPrice: item.price,
-                        quantity: item.qty,
-                        lineTotal: item.price * item.qty
+                    const data = getData();
+                    data.sales.push(sale);
+                    cart.forEach(item => {
+                        data.saleItems.push({
+                            id: genId(),
+                            saleId: saleId,
+                            itemName: item.name,
+                            unitPrice: item.price,
+                            quantity: item.qty,
+                            lineTotal: item.price * item.qty
+                        });
                     });
-                });
-                saveData(data);
+                    saveData(data);
 
-                // Show receipt
-                showReceipt(sale, cart);
-                cart = [];
-                renderCart();
-                amountPaidInput.value = '';
-                changeSpan.textContent = '₱0.00';
-                saleMessageDiv.innerHTML = '<div class="alert alert-success py-1">Sale recorded!</div>';
-                setTimeout(() => saleMessageDiv.innerHTML = '', 4000);
-                refreshSalesList();
-            }
-            // View sale details
-            if (e.target.classList.contains('view-details')) {
-                const saleId = e.target.dataset.id;
-                const data = getData();
-                const items = data.saleItems.filter(si => si.saleId === saleId);
-                let html = '<ul>';
-                items.forEach(it => html += <li>${it.itemName} x ${it.quantity} = ₱${it.lineTotal.toFixed(2)}</li>);
-                html += '</ul>';
-                document.getElementById('detailBody').innerHTML = html;
-                new bootstrap.Modal(document.getElementById('detailsModal')).show();
-            }
-            // Filter sales
-            if (e.target.id === 'filterSales') {
-                refreshSalesList(document.getElementById('salesFrom').value, document.getElementById('salesTo').value);
-            }
-            // Calculate report
-            if (e.target.id === 'calcReport') {
-                const from = document.getElementById('reportFrom').value;
-                const to = document.getElementById('reportTo').value;
-                const data = getData();
-                let filteredSales = data.sales;
-                let filteredIngredients = data.ingredients;
-                if (from) {
-                    filteredSales = filteredSales.filter(s => s.saleDate >= from);
-                    filteredIngredients = filteredIngredients.filter(i => i.date >= from);
-                }
-                if (to) {
-                    filteredSales = filteredSales.filter(s => s.saleDate <= to + 'T23:59:59');
-                    filteredIngredients = filteredIngredients.filter(i => i.date <= to);
-                }
-                const totalSales = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
-                const totalCost = filteredIngredients.reduce((sum, i) => sum + i.price, 0);
-                document.getElementById('rSales').textContent = ₱${totalSales.toFixed(2)};
-                document.getElementById('rCosts').textContent = ₱${totalCost.toFixed(2)};
-                document.getElementById('rProfit').textContent = ₱${(totalSales - totalCost).toFixed(2)};
-            }
-            // Export backup
-            if (e.target.id === 'exportData') {
-                const data = getData();
-                const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json;
-                a.click();
-                URL.revokeObjectURL(url);
-            }
-            // Clear all data
-            if (e.target.id === 'clearData') {
-                if (confirm('DELETE ALL DATA? This cannot be undone.')) {
-                    localStorage.removeItem(STORAGE_KEY);
-                    alert('All data cleared.');
+                    showReceipt(sale, cart);
+                    cart = [];
+                    renderCart();
+                    amountPaidInput.value = '';
+                    changeSpan.textContent = '₱0.00';
+                    saleMessageDiv.innerHTML = '<div class="alert alert-success py-1">Sale recorded!</div>';
+                    setTimeout(() => saleMessageDiv.innerHTML = '', 4000);
                     refreshSalesList();
-                    refreshIngredientsList();
+                    return;
                 }
+                // View sale details
+                if (e.target.classList.contains('view-details')) {
+                    const saleId = e.target.dataset.id;
+                    const data = getData();
+                    const items = data.saleItems.filter(si => si.saleId === saleId);
+                    let html = '<ul>';
+                    items.forEach(it => html += <li>${it.itemName} x ${it.quantity} = ₱${it.lineTotal.toFixed(2)}</li>);
+                    html += '</ul>';
+                    document.getElementById('detailBody').innerHTML = html;
+                    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+                    return;
+                }
+                // Filter sales
+                if (e.target.id === 'filterSales') {
+                    refreshSalesList(document.getElementById('salesFrom').value, document.getElementById('salesTo').value);
+                    return;
+                }
+                // Calculate report
+                if (e.target.id === 'calcReport') {
+                    const from = document.getElementById('reportFrom').value;
+                    const to = document.getElementById('reportTo').value;
+                    const data = getData();
+                    let filteredSales = data.sales;
+                    let filteredIngredients = data.ingredients;
+                    if (from) {
+                        filteredSales = filteredSales.filter(s => s.saleDate >= from);
+                        filteredIngredients = filteredIngredients.filter(i => i.date >= from);
+                    }
+                    if (to) {
+                        filteredSales = filteredSales.filter(s => s.saleDate <= to + 'T23:59:59');
+                        filteredIngredients = filteredIngredients.filter(i => i.date <= to);
+                    }
+                    const totalSales = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
+                    const totalCost = filteredIngredients.reduce((sum, i) => sum + i.price, 0);
+                    document.getElementById('rSales').textContent = ₱${totalSales.toFixed(2)};
+                    document.getElementById('rCosts').textContent = ₱${totalCost.toFixed(2)};
+                    document.getElementById('rProfit').textContent = ₱${(totalSales - totalCost).toFixed(2)};
+                    return;
+                }
+                // Export backup
+                if (e.target.id === 'exportData') {
+                    const data = getData();
+                    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    return;
+                }
+                // Clear all data
+                if (e.target.id === 'clearData') {
+                    if (confirm('DELETE ALL DATA? This cannot be undone.')) {
+                        localStorage.removeItem(STORAGE_KEY);
+                        alert('All data cleared.');
+                        refreshSalesList();
+                        refreshIngredientsList();
+                    }
+                    return;
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
             }
         });
 
-        document.addEventListener('input', e => {
+        document.addEventListener('input', function(e) {
             if (e.target.classList.contains('qty')) {
                 const idx = e.target.dataset.index;
                 const val = parseInt(e.target.value);
@@ -313,36 +323,40 @@
         });
 
         // Ingredient form
-        document.getElementById('ingredientForm').addEventListener('submit', e => {
+        document.getElementById('ingredientForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const ingredient = {
-                id: genId(),
-                ingredient: document.getElementById('ingName').value.trim(),
-                quantity: document.getElementById('ingQty').value.trim(),
-                price: parseFloat(document.getElementById('ingPrice').value),
-                date: document.getElementById('ingDate').value,
-                supplier: document.getElementById('ingSupplier').value.trim()
-            };
-            if (!ingredient.ingredient || !ingredient.quantity || isNaN(ingredient.price)) {
-                return alert('Fill all required fields.');
+            try {
+                const ingredient = {
+                    id: genId(),
+                    ingredient: document.getElementById('ingName').value.trim(),
+                    quantity: document.getElementById('ingQty').value.trim(),
+                    price: parseFloat(document.getElementById('ingPrice').value),
+                    date: document.getElementById('ingDate').value,
+                    supplier: document.getElementById('ingSupplier').value.trim()
+                };
+                if (!ingredient.ingredient || !ingredient.quantity || isNaN(ingredient.price)) {
+                    return alert('Fill all required fields.');
+                }
+                const data = getData();
+                data.ingredients.push(ingredient);
+                saveData(data);
+                this.reset();
+                refreshIngredientsList();
+            } catch (err) {
+                alert('Ingredient error: ' + err.message);
             }
-            const data = getData();
-            data.ingredients.push(ingredient);
-            saveData(data);
-            e.target.reset();
-            refreshIngredientsList();
         });
 
         // Import backup
-        document.getElementById('importFile').addEventListener('change', async e => {
+        document.getElementById('importFile').addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            const text = await file.text();
             try {
+                const text = await file.text();
                 const backup = JSON.parse(text);
-                if (!backup.sales || !backup.saleItems || !backup.ingredients) throw new Error('Invalid');
+                if (!backup.sales || !backup.saleItems || !backup.ingredients) throw new Error('Invalid format');
                 saveData(backup);
-                alert('Backup imported successfully!');
+                alert('Backup imported!');
                 refreshSalesList();
                 refreshIngredientsList();
             } catch (ex) {
@@ -372,7 +386,7 @@
             tbody.innerHTML = '';
             sales.forEach(s => {
                 const row = document.createElement('tr');
-                row.innerHTML = <td class="small">${new Date(s.saleDate).toLocaleString('en-PH',{hour12:true})}</td><td class="text-end">₱${s.totalAmount.toFixed(2)}</td><td class="text-end">₱${s.amountPaid.toFixed(2)}</td><td class="text-end">₱${s.changeGiven.toFixed(2)}</td><td><button class="btn btn-sm btn-outline-info view-details" data-id="${s.id}">👁️</button></td>;
+                row.innerHTML = <td class="small">${new Date(s.saleDate).toLocaleString('en-PH',{hour12:true})}</td><td class="text-end">₱${s.totalAmount.toFixed(2)}</td><td class="text-end">₱${s.amountPaid.toFixed(2)}</td><td class="text-end">₱${s.changeGiven.toFixed(2)}</td><td><button class="btn btn-sm btn-outline-info view-details" data-id="${s.id}" type="button">👁️</button></td>;
                 tbody.appendChild(row);
             });
         }
@@ -395,7 +409,7 @@
 
         // ==================== PWA Install ====================
         let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', e => {
+        window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             document.getElementById('installBtn').style.display = 'inline-block';
@@ -407,10 +421,12 @@
             }
         });
 
-        // Service worker registration (for caching only)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
+
+        // Debug check: if no localStorage, announce ready
+        console.log('Inventory app loaded. localStorage test:', localStorage.getItem(STORAGE_KEY) ? 'existing data' : 'empty');
     </script>
 </body>
 </html>
