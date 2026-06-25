@@ -1,324 +1,1177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Clark's Inventory</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#C62828">
-    <style>
-        :root { --primary: #C62828; --secondary: #F57C00; }
-        body { margin: 0; font-family: sans-serif; background: #fafafa; }
-        .navbar { background: var(--primary); color: white; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .tabs { display: flex; background: #eee; }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: #ccc; font-weight: bold; cursor: pointer; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        .tab-pane { display: none; padding: 15px; }
-        .tab-pane.active { display: block; }
-        .menu-btn { display: block; width: 100%; padding: 15px; margin: 5px 0; font-size: 1.1rem; border: 2px solid var(--primary); border-radius: 12px; background: white; color: var(--primary); }
-        .menu-btn:active { background: var(--primary); color: white; }
-        .btn { border: none; border-radius: 10px; padding: 12px; font-size: 1rem; cursor: pointer; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { background: white; border: 1px solid var(--primary); color: var(--primary); }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-        .install-btn { display: none; background: transparent; border: 1px solid white; color: white; padding: 8px 12px; border-radius: 6px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#8a2c1f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sisig Bagnet POS">
+<link rel="manifest" href="manifest.json" id="manifestLink">
+<title>Clark's Crispy Sisig Bagnet — Inventory & POS</title>
+<style>
+  :root{
+    --char:#1c1410;
+    --crust:#8a2c1f;
+    --crust-dark:#6e1f15;
+    --lard:#f4e3c1;
+    --lard-light:#fbf3e3;
+    --annatto:#d97b29;
+    --leaf:#3f6b4a;
+    --paper:#fffaf0;
+    --ink:#2b1f17;
+    --muted:#7a6a5a;
+    --line:#e3d3b8;
+    --danger:#b3261e;
+    --ok:#3f6b4a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--lard-light);
+    color:var(--ink);
+    -webkit-tap-highlight-color:transparent;
+    padding-bottom:90px;
+    min-height:100vh;
+  }
+  .topbar{
+    background:linear-gradient(135deg,var(--crust) 0%, var(--crust-dark) 100%);
+    color:var(--lard-light);
+    padding:16px 16px 14px;
+    position:sticky;top:0;z-index:50;
+    box-shadow:0 3px 10px rgba(0,0,0,.18);
+  }
+  .topbar h1{
+    margin:0;
+    font-size:19px;
+    font-weight:800;
+    letter-spacing:.2px;
+  }
+  .topbar .sub{
+    font-size:11.5px;
+    opacity:.85;
+    margin-top:2px;
+    font-weight:500;
+  }
+  .install-btn{
+    position:absolute;
+    right:14px; top:14px;
+    background:var(--annatto);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:8px 12px;
+    font-size:12px;
+    font-weight:700;
+    display:none;
+  }
+  nav.tabs{
+    display:flex;
+    overflow-x:auto;
+    background:var(--crust-dark);
+    position:sticky;
+    top:62px;
+    z-index:49;
+    box-shadow:0 2px 6px rgba(0,0,0,.12);
+  }
+  nav.tabs button{
+    flex:1 0 auto;
+    min-width:84px;
+    background:transparent;
+    border:none;
+    color:rgba(255,255,255,.72);
+    padding:12px 8px;
+    font-size:12.5px;
+    font-weight:700;
+    border-bottom:3px solid transparent;
+  }
+  nav.tabs button.active{
+    color:#fff;
+    border-bottom-color:var(--annatto);
+    background:rgba(255,255,255,.06);
+  }
+  main{padding:14px;max-width:560px;margin:0 auto;}
+  section.view{display:none;}
+  section.view.active{display:block;animation:fadein .15s ease-out;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  h2.section-title{
+    font-size:15px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--crust-dark);
+    margin:18px 0 10px;
+    font-weight:800;
+  }
+  h2.section-title:first-child{margin-top:0;}
+
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px;
+    margin-bottom:14px;
+  }
+
+  .menu-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .menu-btn{
+    background:var(--paper);
+    border:2px solid var(--crust);
+    border-radius:var(--radius);
+    padding:14px 8px;
+    text-align:center;
+    font-weight:700;
+    color:var(--ink);
+    min-height:78px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+  }
+  .menu-btn:active{background:var(--lard);}
+  .menu-btn .price{
+    color:var(--crust);
+    font-size:15px;
+    font-weight:800;
+  }
+  .menu-btn .name{font-size:13px;line-height:1.25;}
+
+  .cart-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .cart-row:last-child{border-bottom:none;}
+  .cart-row .ci-name{flex:1;font-size:14px;font-weight:600;}
+  .cart-row .ci-name .unit{display:block;font-size:11.5px;color:var(--muted);font-weight:400;}
+  .qty-control{display:flex;align-items:center;gap:6px;}
+  .qty-control button{
+    width:30px;height:30px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--lard-light);
+    font-size:16px;
+    font-weight:800;
+    color:var(--crust-dark);
+  }
+  .qty-control input{
+    width:34px;
+    text-align:center;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:5px 2px;
+    font-size:14px;
+  }
+  .ci-total{
+    width:64px;
+    text-align:right;
+    font-weight:700;
+    font-size:13.5px;
+  }
+  .ci-remove{
+    background:none;
+    border:none;
+    color:var(--danger);
+    font-size:18px;
+    padding:4px 6px;
+    line-height:1;
+  }
+  .empty-cart{
+    text-align:center;
+    color:var(--muted);
+    font-size:13.5px;
+    padding:18px 0;
+  }
+
+  .totals-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:14px;
+    margin:6px 0;
+  }
+  .totals-row.grand{
+    font-size:18px;
+    font-weight:800;
+    color:var(--crust-dark);
+    border-top:2px solid var(--line);
+    padding-top:10px;
+    margin-top:8px;
+  }
+  .totals-row.change{
+    font-size:16px;
+    font-weight:800;
+  }
+  .totals-row.change.neg{color:var(--danger);}
+  .totals-row.change.pos{color:var(--ok);}
+
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--muted);
+    margin:10px 0 5px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  label:first-child{margin-top:0;}
+  input[type=text],input[type=number],input[type=date]{
+    width:100%;
+    padding:11px 12px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:15px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus{outline:2px solid var(--annatto);outline-offset:1px;}
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    font-size:15.5px;
+    font-weight:800;
+    margin-top:12px;
+    color:#fff;
+    background:var(--crust);
+  }
+  .btn:active{filter:brightness(.92);}
+  .btn.secondary{
+    background:var(--lard-light);
+    color:var(--crust-dark);
+    border:1.5px solid var(--crust);
+  }
+  .btn.ghost{
+    background:transparent;
+    color:var(--crust-dark);
+    border:1.5px solid var(--line);
+  }
+  .btn.danger{background:var(--danger);}
+  .btn.small{
+    width:auto;
+    padding:8px 14px;
+    font-size:13px;
+    margin-top:0;
+  }
+  .btn.full-margin0{margin-top:0;}
+  .row2{display:flex;gap:10px;}
+  .row2 > *{flex:1;}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+    margin-top:8px;
+  }
+  th,td{
+    text-align:left;
+    padding:8px 6px;
+    border-bottom:1px solid var(--line);
+  }
+  th{
+    color:var(--muted);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  td.num{text-align:right;font-weight:600;}
+  .view-link{
+    color:var(--crust);
+    font-weight:700;
+    background:none;
+    border:none;
+    padding:4px 6px;
+    font-size:12.5px;
+    text-decoration:underline;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:14px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--char);
+    color:#fff;
+    padding:12px 18px;
+    border-radius:10px;
+    font-size:13.5px;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s, transform .2s;
+    z-index:200;
+    max-width:90%;
+    text-align:center;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  .toast.show{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+  .toast.error{background:var(--danger);}
+
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(20,12,8,.55);
+    z-index:150;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{
+    background:var(--paper);
+    width:100%;
+    max-width:560px;
+    border-radius:18px 18px 0 0;
+    padding:18px;
+    max-height:82vh;
+    overflow-y:auto;
+  }
+  .modal-box h3{margin:0 0 4px;font-size:16px;color:var(--crust-dark);}
+  .modal-box .receipt-line{
+    display:flex;
+    justify-content:space-between;
+    font-size:13.5px;
+    padding:5px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .modal-close-bar{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+
+  .empty-state{
+    text-align:center;
+    padding:34px 12px;
+    color:var(--muted);
+  }
+  .empty-state .big{font-size:34px;margin-bottom:6px;}
+  .empty-state .t{font-weight:700;color:var(--ink);font-size:14.5px;margin-bottom:4px;}
+  .empty-state .s{font-size:12.5px;}
+
+  .filter-bar{display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;}
+  .filter-bar > div{flex:1;}
+
+  .receipt-paper{
+    font-family:'Courier New',monospace;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+    font-size:12.5px;
+    line-height:1.5;
+  }
+  .receipt-paper .center{text-align:center;}
+  .receipt-paper hr{border:none;border-top:1px dashed #999;margin:8px 0;}
+
+  .badge{
+    display:inline-block;
+    background:var(--leaf);
+    color:#fff;
+    font-size:10.5px;
+    font-weight:700;
+    padding:2px 7px;
+    border-radius:6px;
+    margin-left:6px;
+  }
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+  .stat-box{
+    background:var(--lard-light);
+    border-radius:10px;
+    padding:12px;
+    text-align:center;
+  }
+  .stat-box .label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;}
+  .stat-box .val{font-size:18px;font-weight:800;color:var(--crust-dark);margin-top:2px;}
+  .stat-box.profit .val{color:var(--ok);}
+  .stat-box.profit.neg .val{color:var(--danger);}
+
+  .note-text{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5;}
+</style>
 </head>
 <body>
-    <nav class="navbar">
-        <span>🐷 Clark's Inventory</span>
-        <button class="install-btn" id="installBtn" onclick="installApp()">📲 Install App</button>
-    </nav>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('pos')">POS</button>
-        <button class="tab-btn" onclick="switchTab('sales')">Sales</button>
-        <button class="tab-btn" onclick="switchTab('ingredients')">Ingredients</button>
-        <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
+<div class="topbar">
+  <h1>🍳 Clark's Crispy Sisig Bagnet</h1>
+  <div class="sub">Offline POS &amp; Inventory</div>
+  <button class="install-btn" id="installBtn" onclick="installApp()">⬇ Install App</button>
+</div>
+
+<nav class="tabs">
+  <button class="active" data-tab="pos" onclick="switchTab('pos')">POS</button>
+  <button data-tab="sales" onclick="switchTab('sales')">Sales</button>
+  <button data-tab="ingredients" onclick="switchTab('ingredients')">Ingredients</button>
+  <button data-tab="reports" onclick="switchTab('reports')">Reports</button>
+  <button data-tab="backup" onclick="switchTab('backup')">Backup</button>
+</nav>
+
+<main>
+
+  <!-- ============ POS ============ -->
+  <section class="view active" id="view-pos">
+    <h2 class="section-title">Menu</h2>
+    <div class="menu-grid" id="menuGrid"></div>
+
+    <h2 class="section-title">Cart</h2>
+    <div class="card">
+      <div id="cartList"></div>
+      <div id="cartTotals"></div>
     </div>
 
-    <!-- POS Tab -->
-    <div id="pos" class="tab-pane active">
-        <h2>Quick Menu</h2>
-        <button class="menu-btn" onclick="addToCart('Crispy Pork Sisig Full', 100)">Crispy Pork Sisig Full - ₱100</button>
-        <button class="menu-btn" onclick="addToCart('Crispy Bagnet', 100)">Crispy Bagnet - ₱100</button>
-        <button class="menu-btn" onclick="addToCart('Crispy Sisig with Rice', 59)">Crispy Sisig with Rice - ₱59</button>
-        <button class="menu-btn" onclick="addToCart('Tofu Sisig', 49)">Tofu Sisig - ₱49</button>
-
-        <h3>Current Order</h3>
-        <table id="cartTable"><thead><tr><th>Item</th><th>Qty</th><th>Total</th><th></th></tr></thead><tbody></tbody></table>
-        <p><strong>Total: ₱<span id="cartTotal">0.00</span></strong></p>
-        <input type="number" id="amountPaid" placeholder="Amount customer paid" step="0.01" style="width:100%;padding:10px;margin-bottom:10px;">
-        <p>Change: ₱<span id="changeAmount">0.00</span></p>
-        <button class="btn btn-success" style="width:100%;" onclick="submitSale()">✅ Submit Sale</button>
-        <div id="saleMessage"></div>
-        <div id="receiptArea" style="display:none; margin-top:15px; border:1px dashed #000; padding:10px;"></div>
+    <div class="card">
+      <label for="amountPaid">Amount Paid (₱)</label>
+      <input type="number" inputmode="decimal" id="amountPaid" placeholder="0" oninput="updatePaymentDisplay()">
+      <div id="changeDisplay" style="margin-top:8px;"></div>
+      <button class="btn" id="submitSaleBtn" onclick="submitSale()">✅ Submit Sale</button>
+      <button class="btn ghost" onclick="clearCart()">Clear Cart</button>
     </div>
+  </section>
 
-    <!-- Sales Tab -->
-    <div id="sales" class="tab-pane">
-        <h2>Sales History</h2>
-        <input type="date" id="salesFrom" style="width:48%;"> <input type="date" id="salesTo" style="width:48%;">
-        <button class="btn btn-primary" style="width:100%; margin:5px 0;" onclick="refreshSalesList()">🔍 Filter</button>
-        <table id="salesTable"><thead><tr><th>Date</th><th>Total</th><th>Paid</th><th>Change</th><th></th></tr></thead><tbody></tbody></table>
-    </div>
-
-    <!-- Ingredients Tab -->
-    <div id="ingredients" class="tab-pane">
-        <h2>Log Ingredient Purchase</h2>
-        <input type="text" id="ingName" placeholder="Ingredient" style="width:100%;padding:10px;margin:5px 0;">
-        <input type="text" id="ingQty" placeholder="Qty (e.g., 2 kg)" style="width:100%;padding:10px;margin:5px 0;">
-        <input type="number" id="ingPrice" placeholder="Price" step="0.01" style="width:100%;padding:10px;margin:5px 0;">
-        <input type="date" id="ingDate" style="width:100%;padding:10px;margin:5px 0;">
-        <input type="text" id="ingSupplier" placeholder="Supplier (optional)" style="width:100%;padding:10px;margin:5px 0;">
-        <button class="btn btn-danger" style="width:100%;" onclick="addIngredient()">Add Purchase</button>
-        <table id="ingredientsTable"><thead><tr><th>Date</th><th>Ingredient</th><th>Qty</th><th>Price</th></tr></thead><tbody></tbody></table>
-    </div>
-
-    <!-- Reports Tab -->
-    <div id="reports" class="tab-pane">
-        <h2>Profit Report</h2>
-        <input type="date" id="reportFrom" style="width:48%;"> <input type="date" id="reportTo" style="width:48%;">
-        <button class="btn btn-primary" style="width:100%; margin:5px 0;" onclick="calculateReport()">Calculate</button>
-        <div style="display:flex; margin-top:15px;">
-            <div style="flex:1; background:#28a745; color:white; padding:15px; margin:5px; border-radius:10px;"><strong>Sales</strong><br><span id="rSales">₱0</span></div>
-            <div style="flex:1; background:#dc3545; color:white; padding:15px; margin:5px; border-radius:10px;"><strong>Costs</strong><br><span id="rCosts">₱0</span></div>
-            <div style="flex:1; background:#007bff; color:white; padding:15px; margin:5px; border-radius:10px;"><strong>Profit</strong><br><span id="rProfit">₱0</span></div>
+  <!-- ============ SALES HISTORY ============ -->
+  <section class="view" id="view-sales">
+    <h2 class="section-title">Sales History</h2>
+    <div class="card">
+      <div class="filter-bar">
+        <div>
+          <label for="salesFrom">From</label>
+          <input type="date" id="salesFrom">
         </div>
-        <hr>
-        <button class="btn btn-outline" style="width:100%;" onclick="exportData()">📤 Export Backup (JSON)</button>
-        <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importBackup(this)">
-        <button class="btn btn-outline" style="width:100%;" onclick="document.getElementById('importFile').click()">📥 Import Backup</button>
-        <button class="btn btn-outline" style="width:100%; margin-top:10px; color:red;" onclick="clearAllData()">🗑️ Clear All Data</button>
+        <div>
+          <label for="salesTo">To</label>
+          <input type="date" id="salesTo">
+        </div>
+      </div>
+      <div class="row2">
+        <button class="btn small secondary" style="width:100%" onclick="applySalesFilter()">Filter</button>
+        <button class="btn small ghost" style="width:100%" onclick="clearSalesFilter()">Reset</button>
+      </div>
+    </div>
+    <div id="salesListWrap"></div>
+  </section>
+
+  <!-- ============ INGREDIENTS ============ -->
+  <section class="view" id="view-ingredients">
+    <h2 class="section-title">Log a Purchase</h2>
+    <div class="card">
+      <label for="ingName">Ingredient Name</label>
+      <input type="text" id="ingName" placeholder="e.g. Pork Belly">
+      <label for="ingQty">Quantity</label>
+      <input type="text" id="ingQty" placeholder="e.g. 2 kg">
+      <label for="ingPrice">Price (₱)</label>
+      <input type="number" inputmode="decimal" id="ingPrice" placeholder="0">
+      <label for="ingDate">Date</label>
+      <input type="date" id="ingDate">
+      <label for="ingSupplier">Supplier (optional)</label>
+      <input type="text" id="ingSupplier" placeholder="e.g. Palengke Tindahan ni Aling Rosa">
+      <button class="btn" onclick="addIngredient()">＋ Add Purchase</button>
     </div>
 
-    <script>
-        // ---------- Global Error Alert ----------
-        window.onerror = function(msg) { alert('JS Error: ' + msg); };
+    <h2 class="section-title">Purchase Log</h2>
+    <div id="ingredientsListWrap"></div>
+  </section>
 
-        // ---------- Local Storage Helpers ----------
-        const KEY = 'clarks_sisig';
-        function getData() { try { return JSON.parse(localStorage.getItem(KEY)) || { sales:[], saleItems:[], ingredients:[] }; } catch(e) { return { sales:[], saleItems:[], ingredients:[] }; } }
-        function saveData(d) { localStorage.setItem(KEY, JSON.stringify(d)); }
-        function genId() { return Date.now().toString(36) + Math.random().toString(36).substring(2,7); }
+  <!-- ============ REPORTS ============ -->
+  <section class="view" id="view-reports">
+    <h2 class="section-title">Profit Report</h2>
+    <div class="card">
+      <div class="filter-bar">
+        <div>
+          <label for="reportFrom">From</label>
+          <input type="date" id="reportFrom">
+        </div>
+        <div>
+          <label for="reportTo">To</label>
+          <input type="date" id="reportTo">
+        </div>
+      </div>
+      <button class="btn" onclick="calculateReport()">📊 Calculate</button>
+      <div id="reportResult"></div>
+    </div>
+  </section>
 
-        // ---------- Tab Switching ----------
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
-        }
+  <!-- ============ BACKUP ============ -->
+  <section class="view" id="view-backup">
+    <h2 class="section-title">Backup &amp; Restore</h2>
+    <div class="card">
+      <p class="note-text" style="margin-top:0;">Export everything to a JSON file you can keep safe (e.g. in Google Drive or email it to yourself). Import that file on a new phone to restore your data.</p>
+      <button class="btn secondary" onclick="exportData()">⬇ Export Backup (JSON)</button>
+      <label for="importFile" style="margin-top:16px;">Restore From File</label>
+      <input type="file" id="importFile" accept="application/json,.json" onchange="importBackup(event)" style="padding:9px;">
+    </div>
 
-        // ---------- Cart (global) ----------
-        let cart = [];
+    <h2 class="section-title">Danger Zone</h2>
+    <div class="card">
+      <p class="note-text" style="margin-top:0;">This permanently deletes all sales, purchases, and history from this device. Export a backup first if you're not sure.</p>
+      <button class="btn danger" onclick="clearAllData()">🗑 Clear All Data</button>
+    </div>
+  </section>
 
-        function addToCart(name, price) {
-            const existing = cart.find(i => i.name === name);
-            if (existing) existing.qty++; else cart.push({ name, price, qty: 1 });
-            renderCart();
-        }
+</main>
 
-        function renderCart() {
-            const tbody = document.querySelector('#cartTable tbody');
-            tbody.innerHTML = '';
-            let total = 0;
-            cart.forEach((item, idx) => {
-                const lineTotal = item.price * item.qty;
-                total += lineTotal;
-                tbody.innerHTML += `<tr>
-                    <td>${item.name}</td>
-                    <td><input type="number" value="${item.qty}" min="1" style="width:50px" onchange="updateQty(${idx}, this.value)"></td>
-                    <td>₱${lineTotal.toFixed(2)}</td>
-                    <td><button onclick="removeFromCart(${idx})" style="background:none;border:none;color:red;font-size:1.2rem;">&times;</button></td>
-                </tr>`;
-            });
-            document.getElementById('cartTotal').innerText = total.toFixed(2);
-            computeChange();
-        }
+<div class="toast" id="toast"></div>
 
-        function updateQty(idx, newQty) {
-            const qty = parseInt(newQty);
-            if (qty >= 1) cart[idx].qty = qty;
-            else cart[idx].qty = 1;
-            renderCart();
-        }
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
 
-        function removeFromCart(idx) {
-            cart.splice(idx, 1);
-            renderCart();
-        }
+<script>
+window.onerror = function(msg, src, line, col, err){
+  try{ alert('JS Error: ' + msg + ' (line ' + line + ')'); }catch(e){}
+  return false;
+};
 
-        function computeChange() {
-            const total = parseFloat(document.getElementById('cartTotal').innerText) || 0;
-            const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
-            const change = paid - total;
-            document.getElementById('changeAmount').innerText = change >= 0 ? change.toFixed(2) : '0.00';
-        }
-        document.getElementById('amountPaid').addEventListener('input', computeChange);
+/* ============================================================
+   CONFIG
+============================================================ */
+var STORE_NAME = "Clark's Crispy Sisig Bagnet";
+var MENU = [
+  { id:'sisig_full',  name:'Crispy Pork Sisig Full Order', price:100 },
+  { id:'bagnet',      name:'Crispy Bagnet',                price:100 },
+  { id:'sisig_rice',  name:'Crispy Sisig with Rice',        price:59  },
+  { id:'tofu_sisig',  name:'Tofu Sisig',                    price:49  }
+];
 
-        function submitSale() {
-            if (cart.length === 0) { alert('Cart empty'); return; }
-            const total = parseFloat(document.getElementById('cartTotal').innerText);
-            const paid = parseFloat(document.getElementById('amountPaid').value);
-            if (isNaN(paid) || paid < total) { alert('Insufficient payment'); return; }
-            const change = paid - total;
-            const saleId = genId();
-            const sale = { id: saleId, saleDate: new Date().toISOString(), totalAmount: total, amountPaid: paid, changeGiven: change };
-            const data = getData();
-            data.sales.push(sale);
-            cart.forEach(item => data.saleItems.push({ id: genId(), saleId, itemName: item.name, unitPrice: item.price, quantity: item.qty, lineTotal: item.price*item.qty }));
-            saveData(data);
-            // Receipt
-            let receiptHtml = <h4>Clark's Crispy Sisig Bagnet</h4><p>${new Date(sale.saleDate).toLocaleString()}</p><hr><ul>;
-            cart.forEach(item => receiptHtml += <li>${item.name} x${item.qty} = ₱${(item.price*item.qty).toFixed(2)}</li>);
-            receiptHtml += </ul><hr><p>Total: ₱${total.toFixed(2)}<br>Paid: ₱${paid.toFixed(2)}<br>Change: ₱${change.toFixed(2)}</p>;
-            document.getElementById('receiptArea').innerHTML = receiptHtml;
-            document.getElementById('receiptArea').style.display = 'block';
-            document.getElementById('receiptArea').onclick = () => window.print();
-            cart = []; renderCart();
-            document.getElementById('amountPaid').value = '';
-            document.getElementById('changeAmount').innerText = '0.00';
-            document.getElementById('saleMessage').innerHTML = '<div style="color:green;">Sale recorded!</div>';
-            setTimeout(() => document.getElementById('saleMessage').innerHTML = '', 3000);
-            refreshSalesList();
-        }
+var LS_KEYS = {
+  sales:'csb_sales_v1',
+  ingredients:'csb_ingredients_v1'
+};
 
-        // ---------- Sales History ----------
-        function refreshSalesList() {
-            const data = getData();
-            const from = document.getElementById('salesFrom').value;
-            const to = document.getElementById('salesTo').value;
-            let sales = data.sales;
-            if (from) sales = sales.filter(s => s.saleDate >= from);
-            if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
-            sales.sort((a,b) => new Date(b.saleDate) - new Date(a.saleDate));
-            const tbody = document.querySelector('#salesTable tbody');
-            tbody.innerHTML = '';
-            sales.forEach(s => {
-                tbody.innerHTML += `<tr>
-                    <td>${new Date(s.saleDate).toLocaleString('en-PH',{hour12:true})}</td>
-                    <td>₱${s.totalAmount.toFixed(2)}</td>
-                    <td>₱${s.amountPaid.toFixed(2)}</td>
-                    <td>₱${s.changeGiven.toFixed(2)}</td>
-                    <td><button onclick="viewSaleDetails('${s.id}')">👁️</button></td>
-                </tr>`;
-            });
-        }
+/* ============================================================
+   STORAGE HELPERS (100% synchronous, localStorage only)
+============================================================ */
+function getData(key){
+  try{
+    var raw = localStorage.getItem(key);
+    if(!raw) return [];
+    var parsed = JSON.parse(raw);
+    if(!Array.isArray(parsed)) return [];
+    return parsed;
+  }catch(e){
+    console.error('getData failed for', key, e);
+    return [];
+  }
+}
+function saveData(key, arr){
+  try{
+    localStorage.setItem(key, JSON.stringify(arr));
+    return true;
+  }catch(e){
+    alert('Could not save data — storage may be full. ' + e.message);
+    return false;
+  }
+}
+function getSales(){ return getData(LS_KEYS.sales); }
+function getIngredients(){ return getData(LS_KEYS.ingredients); }
 
-        function viewSaleDetails(saleId) {
-            const data = getData();
-            const items = data.saleItems.filter(si => si.saleId === saleId);
-            let msg = items.map(it => ${it.itemName} x${it.quantity} = ₱${it.lineTotal.toFixed(2)}).join('\n');
-            alert('Sale Details:\n' + msg);
-        }
+function uid(){
+  return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+}
+function peso(n){
+  n = Number(n) || 0;
+  return '₱' + n.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+}
+function fmtDate(iso){
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-PH', {year:'numeric',month:'short',day:'numeric'}) +
+    ' ' + d.toLocaleTimeString('en-PH', {hour:'2-digit',minute:'2-digit'});
+}
+function todayStr(){
+  var d = new Date();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var day = String(d.getDate()).padStart(2,'0');
+  return d.getFullYear() + '-' + m + '-' + day;
+}
 
-        // ---------- Ingredients ----------
-        function addIngredient() {
-            const ingName = document.getElementById('ingName').value.trim();
-            const ingQty = document.getElementById('ingQty').value.trim();
-            const ingPrice = parseFloat(document.getElementById('ingPrice').value);
-            const ingDate = document.getElementById('ingDate').value;
-            const ingSupplier = document.getElementById('ingSupplier').value.trim();
-            if (!ingName || !ingQty || isNaN(ingPrice)) { alert('Fill all required fields'); return; }
-            const ingredient = { id: genId(), ingredient: ingName, quantity: ingQty, price: ingPrice, date: ingDate, supplier: ingSupplier };
-            const data = getData();
-            data.ingredients.push(ingredient);
-            saveData(data);
-            document.getElementById('ingName').value = '';
-            document.getElementById('ingQty').value = '';
-            document.getElementById('ingPrice').value = '';
-            document.getElementById('ingDate').value = '';
-            document.getElementById('ingSupplier').value = '';
-            refreshIngredientsList();
-        }
+function showToast(msg, isError){
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function(){
+    t.className = 'toast';
+  }, 2400);
+}
 
-        function refreshIngredientsList() {
-            const data = getData();
-            const items = data.ingredients.sort((a,b) => new Date(b.date) - new Date(a.date));
-            const tbody = document.querySelector('#ingredientsTable tbody');
-            tbody.innerHTML = '';
-            items.forEach(it => {
-                tbody.innerHTML += <tr><td>${it.date}</td><td>${it.ingredient}</td><td>${it.quantity}</td><td>₱${it.price.toFixed(2)}</td></tr>;
-            });
-        }
+function openModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalOverlay').className = 'modal-overlay show';
+}
+function closeModal(){
+  document.getElementById('modalOverlay').className = 'modal-overlay';
+}
+document.getElementById('modalOverlay').addEventListener('click', function(e){
+  if(e.target.id === 'modalOverlay') closeModal();
+});
 
-        // ---------- Reports ----------
-        function calculateReport() {
-            const from = document.getElementById('reportFrom').value;
-            const to = document.getElementById('reportTo').value;
-            const data = getData();
-            let sales = data.sales;
-            let ings = data.ingredients;
-            if (from) sales = sales.filter(s => s.saleDate >= from);
-            if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
-            if (from) ings = ings.filter(i => i.date >= from);
-            if (to) ings = ings.filter(i => i.date <= to);
-            const totalSales = sales.reduce((sum,s) => sum + s.totalAmount, 0);
-            const totalCost = ings.reduce((sum,i) => sum + i.price, 0);
-            document.getElementById('rSales').innerText = ₱${totalSales.toFixed(2)};
-            document.getElementById('rCosts').innerText = ₱${totalCost.toFixed(2)};
-            document.getElementById('rProfit').innerText = ₱${(totalSales-totalCost).toFixed(2)};
-        }
+/* ============================================================
+   TAB NAVIGATION
+============================================================ */
+function switchTab(tab){
+  var views = document.querySelectorAll('section.view');
+  for(var i=0;i<views.length;i++){ views[i].className = 'view'; }
+  document.getElementById('view-' + tab).className = 'view active';
 
-        // ---------- Backup / Clear ----------
-        function exportData() {
-            const data = getData();
-            const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json;
-            a.click();
-        }
+  var tabs = document.querySelectorAll('nav.tabs button');
+  for(var j=0;j<tabs.length;j++){ tabs[j].className = ''; }
+  document.querySelector('nav.tabs button[data-tab="' + tab + '"]').className = 'active';
 
-        function importBackup(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const backup = JSON.parse(e.target.result);
-                    if (backup.sales && backup.saleItems && backup.ingredients) {
-                        saveData(backup);
-                        alert('Backup imported!');
-                        refreshSalesList();
-                        refreshIngredientsList();
-                    } else throw new Error('Invalid');
-                } catch(ex) { alert('Invalid backup file.'); }
-            };
-            reader.readAsText(file);
-        }
+  if(tab === 'sales') refreshSalesList();
+  if(tab === 'ingredients') refreshIngredientsList();
+}
 
-        function clearAllData() {
-            if (confirm('Delete all data permanently?')) {
-                localStorage.removeItem(KEY);
-                alert('All data cleared.');
-                refreshSalesList();
-                refreshIngredientsList();
-            }
-        }
+/* ============================================================
+   POS — CART
+============================================================ */
+var cart = []; // [{id, name, price, qty}]
 
-        // ---------- Install PWA ----------
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', e => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installBtn').style.display = 'inline-block';
-        });
-        function installApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => deferredPrompt = null);
-            }
-        }
+function renderMenu(){
+  var grid = document.getElementById('menuGrid');
+  var html = '';
+  for(var i=0;i<MENU.length;i++){
+    var item = MENU[i];
+    html += '<button class="menu-btn" onclick="addToCart(\'' + item.id + '\')">' +
+      '<span class="name">' + escapeHtml(item.name) + '</span>' +
+      '<span class="price">' + peso(item.price) + '</span>' +
+      '</button>';
+  }
+  grid.innerHTML = html;
+}
 
-        // ---------- Init ----------
-        refreshSalesList();
-        refreshIngredientsList();
-        console.log('App ready – all functions loaded.');
-    </script>
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+function addToCart(itemId){
+  var menuItem = null;
+  for(var i=0;i<MENU.length;i++){ if(MENU[i].id === itemId){ menuItem = MENU[i]; break; } }
+  if(!menuItem) return;
+
+  var existing = null;
+  for(var j=0;j<cart.length;j++){ if(cart[j].id === itemId){ existing = cart[j]; break; } }
+  if(existing){
+    existing.qty += 1;
+  }else{
+    cart.push({ id:menuItem.id, name:menuItem.name, price:menuItem.price, qty:1 });
+  }
+  renderCart();
+}
+
+function changeQty(itemId, delta){
+  for(var i=0;i<cart.length;i++){
+    if(cart[i].id === itemId){
+      cart[i].qty += delta;
+      if(cart[i].qty < 1) cart[i].qty = 1;
+      renderCart();
+      return;
+    }
+  }
+}
+
+function setQtyDirect(itemId, value){
+  var q = parseInt(value, 10);
+  if(isNaN(q) || q < 1) q = 1;
+  for(var i=0;i<cart.length;i++){
+    if(cart[i].id === itemId){
+      cart[i].qty = q;
+      renderCart();
+      return;
+    }
+  }
+}
+
+function removeFromCart(itemId){
+  cart = cart.filter(function(c){ return c.id !== itemId; });
+  renderCart();
+}
+
+function clearCart(){
+  if(cart.length === 0) return;
+  if(!confirm('Clear the entire cart?')) return;
+  cart = [];
+  document.getElementById('amountPaid').value = '';
+  renderCart();
+}
+
+function cartTotal(){
+  var total = 0;
+  for(var i=0;i<cart.length;i++){ total += cart[i].price * cart[i].qty; }
+  return total;
+}
+
+function renderCart(){
+  var listEl = document.getElementById('cartList');
+  var totalsEl = document.getElementById('cartTotals');
+
+  if(cart.length === 0){
+    listEl.innerHTML = '<div class="empty-cart">Cart is empty. Tap a menu item above to add it.</div>';
+    totalsEl.innerHTML = '';
+  }else{
+    var html = '';
+    for(var i=0;i<cart.length;i++){
+      var c = cart[i];
+      var lineTotal = c.price * c.qty;
+      html += '<div class="cart-row">' +
+        '<div class="ci-name">' + escapeHtml(c.name) + '<span class="unit">' + peso(c.price) + ' each</span></div>' +
+        '<div class="qty-control">' +
+          '<button onclick="changeQty(\'' + c.id + '\',-1)">−</button>' +
+          '<input type="number" value="' + c.qty + '" min="1" inputmode="numeric" oninput="setQtyDirect(\'' + c.id + '\', this.value)">' +
+          '<button onclick="changeQty(\'' + c.id + '\',1)">+</button>' +
+        '</div>' +
+        '<div class="ci-total">' + peso(lineTotal) + '</div>' +
+        '<button class="ci-remove" onclick="removeFromCart(\'' + c.id + '\')">✕</button>' +
+        '</div>';
+    }
+    listEl.innerHTML = html;
+
+    var total = cartTotal();
+    totalsEl.innerHTML = '<div class="totals-row grand"><span>Total</span><span>' + peso(total) + '</span></div>';
+  }
+  updatePaymentDisplay();
+}
+
+function updatePaymentDisplay(){
+  var total = cartTotal();
+  var paidInput = document.getElementById('amountPaid');
+  var paid = parseFloat(paidInput.value);
+  var changeEl = document.getElementById('changeDisplay');
+  var submitBtn = document.getElementById('submitSaleBtn');
+
+  if(cart.length === 0){
+    changeEl.innerHTML = '';
+    submitBtn.disabled = false; // never disabled per spec, but submitSale() will validate
+    return;
+  }
+
+  if(isNaN(paid)){
+    changeEl.innerHTML = '<div class="totals-row"><span>Change</span><span>—</span></div>';
+    return;
+  }
+
+  var change = paid - total;
+  var cls = change < 0 ? 'neg' : 'pos';
+  var label = change < 0 ? 'Still Due' : 'Change';
+  changeEl.innerHTML = '<div class="totals-row change ' + cls + '"><span>' + label + '</span><span>' + peso(Math.abs(change)) + '</span></div>';
+}
+
+function submitSale(){
+  if(cart.length === 0){
+    showToast('Add at least one item to the cart first.', true);
+    return;
+  }
+  var total = cartTotal();
+  var paidInput = document.getElementById('amountPaid');
+  var paid = parseFloat(paidInput.value);
+
+  if(isNaN(paid)){
+    showToast('Enter the amount paid by the customer.', true);
+    paidInput.focus();
+    return;
+  }
+  if(paid < total){
+    if(!confirm('Amount paid (' + peso(paid) + ') is less than the total (' + peso(total) + '). Save anyway?')){
+      return;
+    }
+  }
+
+  var sale = {
+    id: uid(),
+    datetime: new Date().toISOString(),
+    items: cart.map(function(c){ return { name:c.name, price:c.price, qty:c.qty, lineTotal:c.price*c.qty }; }),
+    total: total,
+    paid: paid,
+    change: paid - total
+  };
+
+  var sales = getSales();
+  sales.push(sale);
+  var ok = saveData(LS_KEYS.sales, sales);
+  if(!ok) return;
+
+  showReceipt(sale, true);
+
+  cart = [];
+  paidInput.value = '';
+  renderCart();
+  showToast('Sale saved!');
+}
+
+function showReceipt(sale, isFresh){
+  var lines = '';
+  for(var i=0;i<sale.items.length;i++){
+    var it = sale.items[i];
+    lines += '<div class="receipt-line"><span>' + escapeHtml(it.name) + ' x' + it.qty + '</span><span>' + peso(it.lineTotal) + '</span></div>';
+  }
+  var html =
+    '<div class="receipt-paper" id="receiptPrintArea">' +
+      '<div class="center"><strong>' + escapeHtml(STORE_NAME) + '</strong></div>' +
+      '<div class="center">' + fmtDate(sale.datetime) + '</div>' +
+      '<hr>' +
+      lines +
+      '<hr>' +
+      '<div class="receipt-line"><strong>TOTAL</strong><strong>' + peso(sale.total) + '</strong></div>' +
+      '<div class="receipt-line"><span>Paid</span><span>' + peso(sale.paid) + '</span></div>' +
+      '<div class="receipt-line"><span>Change</span><span>' + peso(Math.max(0,sale.change)) + '</span></div>' +
+    '</div>' +
+    '<div class="modal-close-bar">' +
+      '<button class="btn secondary" onclick="printReceipt()">🖨 Print</button>' +
+      '<button class="btn ghost" onclick="closeModal()">Close</button>' +
+    '</div>';
+  openModal('<h3>' + (isFresh ? 'Sale Complete ✅' : 'Receipt') + '</h3>' + html);
+}
+
+function printReceipt(){
+  var area = document.getElementById('receiptPrintArea');
+  if(!area) return;
+  var w = window.open('', '_blank');
+  if(!w){ showToast('Allow popups to print.', true); return; }
+  w.document.write('<html><head><title>Receipt</title><style>body{font-family:monospace;font-size:13px;padding:16px;} .receipt-line{display:flex;justify-content:space-between;padding:3px 0;} hr{border:none;border-top:1px dashed #888;}</style></head><body>' + area.innerHTML + '</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 250);
+}
+
+/* ============================================================
+   SALES HISTORY
+============================================================ */
+var salesFilterFrom = null, salesFilterTo = null;
+
+function applySalesFilter(){
+  salesFilterFrom = document.getElementById('salesFrom').value || null;
+  salesFilterTo = document.getElementById('salesTo').value || null;
+  refreshSalesList();
+}
+function clearSalesFilter(){
+  document.getElementById('salesFrom').value = '';
+  document.getElementById('salesTo').value = '';
+  salesFilterFrom = null; salesFilterTo = null;
+  refreshSalesList();
+}
+
+function dateInRange(isoDateTime, fromStr, toStr){
+  var d = isoDateTime.slice(0,10);
+  if(fromStr && d < fromStr) return false;
+  if(toStr && d > toStr) return false;
+  return true;
+}
+
+function refreshSalesList(){
+  var sales = getSales().slice().sort(function(a,b){ return new Date(b.datetime) - new Date(a.datetime); });
+
+  if(salesFilterFrom || salesFilterTo){
+    sales = sales.filter(function(s){ return dateInRange(s.datetime, salesFilterFrom, salesFilterTo); });
+  }
+
+  var wrap = document.getElementById('salesListWrap');
+
+  if(sales.length === 0){
+    wrap.innerHTML = '<div class="empty-state"><div class="big">🧾</div><div class="t">No sales yet</div><div class="s">Sales you submit on the POS tab will show up here.</div></div>';
+    return;
+  }
+
+  var html = '<div class="card" style="padding:0;overflow-x:auto;"><table><thead><tr>' +
+    '<th>Date</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Change</th><th></th>' +
+    '</tr></thead><tbody>';
+
+  for(var i=0;i<sales.length;i++){
+    var s = sales[i];
+    html += '<tr>' +
+      '<td>' + fmtDate(s.datetime) + '</td>' +
+      '<td class="num">' + peso(s.total) + '</td>' +
+      '<td class="num">' + peso(s.paid) + '</td>' +
+      '<td class="num">' + peso(s.change) + '</td>' +
+      '<td><button class="view-link" onclick="viewSaleDetails(\'' + s.id + '\')">View</button></td>' +
+      '</tr>';
+  }
+  html += '</tbody></table></div>';
+
+  var totalSum = sales.reduce(function(acc,s){ return acc + s.total; }, 0);
+  html += '<div class="card"><div class="totals-row grand"><span>' + sales.length + ' sale(s)</span><span>' + peso(totalSum) + '</span></div></div>';
+
+  wrap.innerHTML = html;
+}
+
+function viewSaleDetails(saleId){
+  var sales = getSales();
+  var sale = null;
+  for(var i=0;i<sales.length;i++){ if(sales[i].id === saleId){ sale = sales[i]; break; } }
+  if(!sale){ showToast('Sale not found.', true); return; }
+  showReceipt(sale, false);
+}
+
+/* ============================================================
+   INGREDIENTS
+============================================================ */
+function addIngredient(){
+  var name = document.getElementById('ingName').value.trim();
+  var qty = document.getElementById('ingQty').value.trim();
+  var price = parseFloat(document.getElementById('ingPrice').value);
+  var date = document.getElementById('ingDate').value || todayStr();
+  var supplier = document.getElementById('ingSupplier').value.trim();
+
+  if(!name){ showToast('Enter the ingredient name.', true); return; }
+  if(!qty){ showToast('Enter the quantity (e.g. "2 kg").', true); return; }
+  if(isNaN(price) || price < 0){ showToast('Enter a valid price.', true); return; }
+
+  var ingredients = getIngredients();
+  ingredients.push({
+    id: uid(),
+    name: name,
+    qty: qty,
+    price: price,
+    date: date,
+    supplier: supplier || ''
+  });
+  var ok = saveData(LS_KEYS.ingredients, ingredients);
+  if(!ok) return;
+
+  document.getElementById('ingName').value = '';
+  document.getElementById('ingQty').value = '';
+  document.getElementById('ingPrice').value = '';
+  document.getElementById('ingDate').value = '';
+  document.getElementById('ingSupplier').value = '';
+
+  refreshIngredientsList();
+  showToast('Purchase logged!');
+}
+
+function deleteIngredient(id){
+  if(!confirm('Delete this purchase entry?')) return;
+  var ingredients = getIngredients().filter(function(x){ return x.id !== id; });
+  saveData(LS_KEYS.ingredients, ingredients);
+  refreshIngredientsList();
+}
+
+function refreshIngredientsList(){
+  var ingredients = getIngredients().slice().sort(function(a,b){ return (b.date || '').localeCompare(a.date || ''); });
+  var wrap = document.getElementById('ingredientsListWrap');
+
+  if(ingredients.length === 0){
+    wrap.innerHTML = '<div class="empty-state"><div class="big">🧅</div><div class="t">No purchases logged</div><div class="s">Log your ingredient costs above to track spending.</div></div>';
+    return;
+  }
+
+  var html = '<div class="card" style="padding:0;overflow-x:auto;"><table><thead><tr>' +
+    '<th>Date</th><th>Item</th><th>Qty</th><th class="num">Price</th><th>Supplier</th><th></th>' +
+    '</tr></thead><tbody>';
+
+  for(var i=0;i<ingredients.length;i++){
+    var ing = ingredients[i];
+    html += '<tr>' +
+      '<td>' + escapeHtml(ing.date) + '</td>' +
+      '<td>' + escapeHtml(ing.name) + '</td>' +
+      '<td>' + escapeHtml(ing.qty) + '</td>' +
+      '<td class="num">' + peso(ing.price) + '</td>' +
+      '<td>' + escapeHtml(ing.supplier || '—') + '</td>' +
+      '<td><button class="view-link" style="color:var(--danger)" onclick="deleteIngredient(\'' + ing.id + '\')">Delete</button></td>' +
+      '</tr>';
+  }
+  html += '</tbody></table></div>';
+
+  var totalCost = ingredients.reduce(function(acc,x){ return acc + x.price; }, 0);
+  html += '<div class="card"><div class="totals-row grand"><span>' + ingredients.length + ' purchase(s)</span><span>' + peso(totalCost) + '</span></div></div>';
+
+  wrap.innerHTML = html;
+}
+
+/* ============================================================
+   PROFIT REPORT
+============================================================ */
+function calculateReport(){
+  var from = document.getElementById('reportFrom').value || null;
+  var to = document.getElementById('reportTo').value || null;
+
+  var sales = getSales().filter(function(s){ return dateInRange(s.datetime, from, to); });
+  var ingredients = getIngredients().filter(function(ing){
+    var d = ing.date;
+    if(from && d < from) return false;
+    if(to && d > to) return false;
+    return true;
+  });
+
+  var totalSales = sales.reduce(function(acc,s){ return acc + s.total; }, 0);
+  var totalCost = ingredients.reduce(function(acc,x){ return acc + x.price; }, 0);
+  var profit = totalSales - totalCost;
+
+  var rangeLabel = (from || '…') + ' → ' + (to || '…');
+
+  var html =
+    '<div class="note-text" style="margin-top:14px;">Period: ' + escapeHtml(rangeLabel) +
+      ' &nbsp;·&nbsp; ' + sales.length + ' sale(s), ' + ingredients.length + ' purchase(s)</div>' +
+    '<div class="stat-grid">' +
+      '<div class="stat-box"><div class="label">Total Sales</div><div class="val">' + peso(totalSales) + '</div></div>' +
+      '<div class="stat-box"><div class="label">Ingredient Costs</div><div class="val">' + peso(totalCost) + '</div></div>' +
+    '</div>' +
+    '<div class="stat-grid">' +
+      '<div class="stat-box profit' + (profit < 0 ? ' neg' : '') + '" style="grid-column:1/3;"><div class="label">Gross Profit</div><div class="val">' + peso(profit) + '</div></div>' +
+    '</div>';
+
+  document.getElementById('reportResult').innerHTML = html;
+}
+
+/* ============================================================
+   BACKUP / RESTORE / CLEAR
+============================================================ */
+function exportData(){
+  var payload = {
+    exportedAt: new Date().toISOString(),
+    store: STORE_NAME,
+    sales: getSales(),
+    ingredients: getIngredients()
+  };
+  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var stamp = todayStr();
+  a.href = url;
+  a.download = 'sisig-bagnet-backup-' + stamp + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  showToast('Backup downloaded.');
+}
+
+function importBackup(evt){
+  var file = evt.target.files && evt.target.files[0];
+  if(!file) return;
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      if(!data || (!Array.isArray(data.sales) && !Array.isArray(data.ingredients))){
+        showToast('That file doesn\'t look like a valid backup.', true);
+        return;
+      }
+      var mode = confirm('Tap OK to MERGE this backup with existing data, or Cancel to REPLACE all current data with the backup.');
+      var sales = Array.isArray(data.sales) ? data.sales : [];
+      var ingredients = Array.isArray(data.ingredients) ? data.ingredients : [];
+
+      if(mode){
+        var existingSales = getSales();
+        var existingIds = existingSales.map(function(s){return s.id;});
+        sales.forEach(function(s){ if(existingIds.indexOf(s.id) === -1) existingSales.push(s); });
+        saveData(LS_KEYS.sales, existingSales);
+
+        var existingIngs = getIngredients();
+        var existingIngIds = existingIngs.map(function(x){return x.id;});
+        ingredients.forEach(function(x){ if(existingIngIds.indexOf(x.id) === -1) existingIngs.push(x); });
+        saveData(LS_KEYS.ingredients, existingIngs);
+      }else{
+        saveData(LS_KEYS.sales, sales);
+        saveData(LS_KEYS.ingredients, ingredients);
+      }
+
+      refreshSalesList();
+      refreshIngredientsList();
+      showToast('Backup restored (' + (mode ? 'merged' : 'replaced') + ').');
+    }catch(err){
+      showToast('Could not read that file: ' + err.message, true);
+    }
+    evt.target.value = '';
+  };
+  reader.onerror = function(){
+    showToast('Could not read that file.', true);
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData(){
+  if(!confirm('This permanently deletes ALL sales and ingredient records from this device. This cannot be undone. Continue?')) return;
+  if(!confirm('Are you absolutely sure? Type-confirm: tap OK to permanently erase everything.')) return;
+
+  localStorage.removeItem(LS_KEYS.sales);
+  localStorage.removeItem(LS_KEYS.ingredients);
+  cart = [];
+
+  renderCart();
+  refreshSalesList();
+  refreshIngredientsList();
+  document.getElementById('reportResult').innerHTML = '';
+  showToast('All data cleared.');
+}
+
+/* ============================================================
+   PWA INSTALL
+============================================================ */
+var deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBtn').style.display = 'inline-block';
+});
+
+function installApp(){
+  if(!deferredInstallPrompt){
+    showToast('Use your browser menu → "Add to Home Screen" to install.', true);
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(function(choice){
+    if(choice.outcome === 'accepted'){
+      showToast('App installed!');
+    }
+    deferredInstallPrompt = null;
+    document.getElementById('installBtn').style.display = 'none';
+  });
+}
+
+window.addEventListener('appinstalled', function(){
+  document.getElementById('installBtn').style.display = 'none';
+  showToast('Installed! You can now open it from your home screen.');
+});
+
+/* ============================================================
+   SERVICE WORKER REGISTRATION (graceful — works even if
+   sw.js / manifest.json are missing, e.g. when opened via file://
+   or copy-pasted without the companion files)
+============================================================ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    if(location.protocol === 'file:'){
+      return; // service workers cannot run on file:// — app still fully works without offline caching
+    }
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      console.log('Service worker registered.', reg.scope);
+    }).catch(function(err){
+      console.warn('Service worker registration failed (app still works without it):', err);
+    });
+  });
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+function init(){
+  renderMenu();
+  renderCart();
+  document.getElementById('ingDate').value = todayStr();
+  refreshSalesList();
+  refreshIngredientsList();
+}
+init();
+</script>
 </body>
 </html>
