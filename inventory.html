@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Clark's Inventory</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#C62828">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --primary: #C62828; --secondary: #F57C00; --dark: #3E2723; }
+        body { padding-top: 56px; background: #fafafa; }
+        .navbar { background: var(--primary) !important; }
+        .nav-tabs .nav-link { color: #333; font-weight: 500; }
+        .nav-tabs .nav-link.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-primary { background: var(--primary); border-color: var(--primary); }
+        .btn-outline-primary { color: var(--primary); border-color: var(--primary); }
+        .btn-outline-primary:hover { background: var(--primary); color: white; }
+        .card { border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .menu-btn { font-size: 1.1rem; padding: 15px; border-radius: 12px; margin-bottom: 8px; }
+        .qty-input { width: 60px; display: inline-block; }
+        .install-btn { display: none; }
+        @media (display-mode: standalone) { body { padding-top: 0; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark fixed-top">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">🐷 Clark's Inventory</span>
+            <button class="btn btn-outline-light install-btn" id="installBtn">📲 Install App</button>
+        </div>
+    </nav>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs justify-content-around" id="mainTab" role="tablist">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#pos">🛒 POS</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#sales">📋 Sales</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#ingredients">🥩 Ingredients</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#reports">📊 Reports</a></li>
+    </ul>
+
+    <div class="tab-content container pb-4">
+        <!-- POS Tab -->
+        <div class="tab-pane fade show active" id="pos">
+            <h4 class="mt-3 mb-2">Quick Menu</h4>
+            <div class="d-grid gap-1 mb-3">
+                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Pork Sisig Full" data-price="100">Crispy Pork Sisig Full - ₱100</button>
+                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Bagnet" data-price="100">Crispy Bagnet - ₱100</button>
+                <button class="btn btn-outline-primary menu-btn" data-item="Crispy Sisig with Rice" data-price="59">Crispy Sisig with Rice - ₱59</button>
+                <button class="btn btn-outline-primary menu-btn" data-item="Tofu Sisig" data-price="49">Tofu Sisig - ₱49</button>
+            </div>
+            <h5>Current Order</h5>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle" id="cartTable">
+                    <thead class="table-light"><tr><th>Item</th><th>Qty</th><th>Total</th><th></th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between fw-bold mb-2">
+                <span>Total:</span> <span id="cartTotal">₱0.00</span>
+            </div>
+            <div class="mb-2"><input type="number" id="amountPaid" class="form-control form-control-lg" placeholder="Amount customer paid" step="0.01"></div>
+            <div class="d-flex justify-content-between mb-3">
+                <span class="fw-bold">Change:</span> <span id="changeAmount" class="text-success fw-bold fs-5">₱0.00</span>
+            </div>
+            <button class="btn btn-success btn-lg w-100 mb-2" id="submitSale">✅ Submit Sale</button>
+            <div id="saleMessage"></div>
+            <!-- Receipt print area (hidden) -->
+            <div id="receiptArea" class="d-none"></div>
+        </div>
+
+        <!-- Sales History Tab -->
+        <div class="tab-pane fade" id="sales">
+            <h4 class="mt-3">Sales History</h4>
+            <div class="row g-2 mb-2">
+                <div class="col-5"><input type="date" id="salesFrom" class="form-control" placeholder="From"></div>
+                <div class="col-5"><input type="date" id="salesTo" class="form-control" placeholder="To"></div>
+                <div class="col-2"><button id="filterSales" class="btn btn-primary w-100">🔍</button></div>
+            </div>
+            <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                <table class="table table-sm table-striped" id="salesTable">
+                    <thead><tr><th>Date</th><th>Total</th><th>Paid</th><th>Change</th><th></th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <!-- Detail Modal -->
+            <div class="modal fade" id="detailsModal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-danger text-white"><h5>Sale Details</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" id="detailBody"></div></div></div></div>
+        </div>
+
+        <!-- Ingredients Tab -->
+        <div class="tab-pane fade" id="ingredients">
+            <h4 class="mt-3">Log Ingredient Purchase</h4>
+            <form id="ingredientForm" class="card p-3 mb-3">
+                <div class="mb-2"><input type="text" id="ingName" class="form-control" placeholder="Ingredient (e.g., Pork belly)" required></div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6"><input type="text" id="ingQty" class="form-control" placeholder="Qty (e.g., 2 kg)" required></div>
+                    <div class="col-6"><input type="number" id="ingPrice" class="form-control" placeholder="Price (₱)" step="0.01" required></div>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6"><input type="date" id="ingDate" class="form-control" required></div>
+                    <div class="col-6"><input type="text" id="ingSupplier" class="form-control" placeholder="Supplier (optional)"></div>
+                </div>
+                <button class="btn btn-danger w-100">Add Purchase</button>
+            </form>
+            <div class="table-responsive" style="max-height: 50vh; overflow-y: auto;">
+                <table class="table table-sm" id="ingredientsTable">
+                    <thead><tr><th>Date</th><th>Ingredient</th><th>Qty</th><th>Price</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div class="tab-pane fade" id="reports">
+            <h4 class="mt-3">Profit Report</h4>
+            <div class="row g-2 mb-3">
+                <div class="col-5"><input type="date" id="reportFrom" class="form-control"></div>
+                <div class="col-5"><input type="date" id="reportTo" class="form-control"></div>
+                <div class="col-2"><button id="calcReport" class="btn btn-primary w-100">Go</button></div>
+            </div>
+            <div class="row text-white text-center mb-4">
+                <div class="col-4"><div class="card bg-success p-2"><h6>Sales</h6><h4 id="rSales">₱0</h4></div></div>
+                <div class="col-4"><div class="card bg-danger p-2"><h6>Costs</h6><h4 id="rCosts">₱0</h4></div></div>
+                <div class="col-4"><div class="card bg-primary p-2"><h6>Profit</h6><h4 id="rProfit">₱0</h4></div></div>
+            </div>
+            <hr>
+            <div class="d-grid gap-2">
+                <button id="exportData" class="btn btn-outline-secondary">📤 Export Backup (JSON)</button>
+                <label class="btn btn-outline-secondary" for="importFile">📥 Import Backup</label>
+                <input type="file" id="importFile" accept=".json" class="d-none">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ========== IndexedDB Setup ==========
+        let db;
+        const DB_NAME = 'ClarksSisigDB';
+        const DB_VERSION = 2;
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('sales')) {
+                const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+                salesStore.createIndex('date', 'saleDate', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('saleItems')) {
+                const itemsStore = db.createObjectStore('saleItems', { autoIncrement: true });
+                itemsStore.createIndex('saleId', 'saleId', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('ingredients')) {
+                db.createObjectStore('ingredients', { keyPath: 'id', autoIncrement: true });
+            }
+        };
+
+        request.onsuccess = e => {
+            db = e.target.result;
+            refreshSalesList();
+            refreshIngredientsList();
+        };
+
+        request.onerror = () => {
+            alert('Unable to access local storage. Please allow storage permissions.');
+        };
+
+        // ========== POS Cart ==========
+        let cart = [];
+        const cartTable = document.querySelector('#cartTable tbody');
+        const cartTotalSpan = document.getElementById('cartTotal');
+        const amountPaidInput = document.getElementById('amountPaid');
+        const changeSpan = document.getElementById('changeAmount');
+        const saleMessageDiv = document.getElementById('saleMessage');
+
+        document.querySelectorAll('.menu-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const name = btn.dataset.item;
+                const price = parseFloat(btn.dataset.price);
+                const existing = cart.find(i => i.name === name);
+                if (existing) existing.qty++;
+                else cart.push({ name, price, qty: 1 });
+                renderCart();
+            });
+        });
+
+        function renderCart() {
+            cartTable.innerHTML = '';
+            let total = 0;
+            cart.forEach((item, idx) => {
+                const lineTotal = item.price * item.qty;
+                total += lineTotal;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td><input type="number" class="form-control form-control-sm qty" data-index="${idx}" value="${item.qty}" min="1" style="width:60px"></td>
+                    <td class="text-end">₱${lineTotal.toFixed(2)}</td>
+                    <td><button class="btn btn-sm btn-outline-danger remove" data-index="${idx}">&times;</button></td>
+                `;
+                cartTable.appendChild(row);
+            });
+            cartTotalSpan.textContent = ₱${total.toFixed(2)};
+            computeChange();
+        }
+
+        document.addEventListener('click', e => {
+            if (e.target.classList.contains('remove')) {
+                const idx = e.target.dataset.index;
+                cart.splice(idx, 1);
+                renderCart();
+            }
+        });
+
+        document.addEventListener('input', e => {
+            if (e.target.classList.contains('qty')) {
+                const idx = e.target.dataset.index;
+                const val = parseInt(e.target.value);
+                if (val >= 1) {
+                    cart[idx].qty = val;
+                } else {
+                    e.target.value = cart[idx].qty;
+                }
+                renderCart();
+            }
+        });
+
+        amountPaidInput.addEventListener('input', computeChange);
+        function computeChange() {
+            const total = parseFloat(cartTotalSpan.textContent.replace('₱','')) || 0;
+            const paid = parseFloat(amountPaidInput.value) || 0;
+            const change = paid - total;
+            changeSpan.textContent = change >= 0 ? ₱${change.toFixed(2)} : '₱0.00';
+            changeSpan.classList.toggle('text-danger', change < 0);
+        }
+
+        document.getElementById('submitSale').addEventListener('click', () => {
+            if (cart.length === 0) return alert('Cart is empty.');
+            const total = parseFloat(cartTotalSpan.textContent.replace('₱',''));
+            const paid = parseFloat(amountPaidInput.value);
+            if (isNaN(paid) || paid < total) return alert('Insufficient payment.');
+            const change = paid - total;
+
+            const sale = {
+                saleDate: new Date().toISOString(),
+                totalAmount: total,
+                amountPaid: paid,
+                changeGiven: change
+            };
+
+            const tx = db.transaction(['sales', 'saleItems'], 'readwrite');
+            const salesStore = tx.objectStore('sales');
+            const itemsStore = tx.objectStore('saleItems');
+
+            const saleReq = salesStore.add(sale);
+            saleReq.onsuccess = () => {
+                const saleId = saleReq.result;
+                cart.forEach(item => {
+                    itemsStore.add({
+                        saleId,
+                        itemName: item.name,
+                        unitPrice: item.price,
+                        quantity: item.qty,
+                        lineTotal: item.price * item.qty
+                    });
+                });
+
+                tx.oncomplete = () => {
+                    // Show receipt and optionally print
+                    showReceipt(sale, cart);
+                    cart = [];
+                    renderCart();
+                    amountPaidInput.value = '';
+                    changeSpan.textContent = '₱0.00';
+                    saleMessageDiv.innerHTML = '<div class="alert alert-success py-1">Sale recorded! Tap receipt to print.</div>';
+                    setTimeout(() => saleMessageDiv.innerHTML = '', 4000);
+                    refreshSalesList();
+                };
+            };
+        });
+
+        function showReceipt(sale, items) {
+            const date = new Date(sale.saleDate).toLocaleString();
+            let receiptHtml = `
+                <div style="font-family: monospace; max-width: 300px; margin: auto; padding: 10px; border: 1px dashed #000;">
+                    <h5 style="text-align:center;">Clark's Crispy Sisig Bagnet</h5>
+                    <p style="text-align:center;">${date}</p>
+                    <hr>
+                    <table width="100%">
+            `;
+            items.forEach(item => {
+                receiptHtml += <tr><td>${item.name} x${item.qty}</td><td align="right">₱${(item.price*item.qty).toFixed(2)}</td></tr>;
+            });
+            receiptHtml += `
+                    </table>
+                    <hr>
+                    <p>Total: ₱${sale.totalAmount.toFixed(2)}<br>Paid: ₱${sale.amountPaid.toFixed(2)}<br>Change: ₱${sale.changeGiven.toFixed(2)}</p>
+                    <p style="text-align:center;">Thank you!</p>
+                </div>
+            `;
+            const receiptDiv = document.getElementById('receiptArea');
+            receiptDiv.innerHTML = receiptHtml;
+            receiptDiv.classList.remove('d-none');
+            // Auto-trigger print (optional, you can remove if you just want display)
+            // window.print();   // Uncomment to auto print; but better to let user tap receipt
+            receiptDiv.onclick = () => window.print();
+        }
+
+        // ========== Sales History ==========
+        function refreshSalesList(from = '', to = '') {
+            if (!db) return;
+            const tx = db.transaction('sales', 'readonly');
+            const store = tx.objectStore('sales');
+            const req = store.getAll();
+            req.onsuccess = () => {
+                let sales = req.result;
+                if (from) sales = sales.filter(s => s.saleDate >= from);
+                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
+                sales.sort((a,b) => new Date(b.saleDate) - new Date(a.saleDate));
+                const tbody = document.querySelector('#salesTable tbody');
+                tbody.innerHTML = '';
+                sales.forEach(s => {
+                    const row = document.createElement('tr');
+                    const dateStr = new Date(s.saleDate).toLocaleString('en-PH', { hour12: true });
+                    row.innerHTML = `
+                        <td class="small">${dateStr}</td>
+                        <td class="text-end">₱${s.totalAmount.toFixed(2)}</td>
+                        <td class="text-end">₱${s.amountPaid.toFixed(2)}</td>
+                        <td class="text-end">₱${s.changeGiven.toFixed(2)}</td>
+                        <td><button class="btn btn-sm btn-outline-info view-details" data-id="${s.id}">👁️</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            };
+        }
+
+        document.getElementById('filterSales').addEventListener('click', () => {
+            refreshSalesList(document.getElementById('salesFrom').value, document.getElementById('salesTo').value);
+        });
+
+        document.addEventListener('click', e => {
+            if (e.target.classList.contains('view-details')) {
+                const id = parseInt(e.target.dataset.id);
+                const tx = db.transaction('saleItems', 'readonly');
+                const store = tx.objectStore('saleItems');
+                const index = store.index('saleId');
+                const req = index.getAll(id);
+                req.onsuccess = () => {
+                    const items = req.result;
+                    let html = '<ul>';
+                    items.forEach(it => html += <li>${it.itemName} x ${it.quantity} = ₱${it.lineTotal.toFixed(2)}</li>);
+                    html += '</ul>';
+                    document.getElementById('detailBody').innerHTML = html;
+                    new bootstrap.Modal(document.getElementById('detailsModal')).show();
+                };
+            }
+        });
+
+        // ========== Ingredients ==========
+        document.getElementById('ingredientForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const data = {
+                ingredient: document.getElementById('ingName').value.trim(),
+                quantity: document.getElementById('ingQty').value.trim(),
+                price: parseFloat(document.getElementById('ingPrice').value),
+                date: document.getElementById('ingDate').value,
+                supplier: document.getElementById('ingSupplier').value.trim()
+            };
+            if (!data.ingredient || !data.quantity || isNaN(data.price)) return alert('Fill all required fields.');
+
+            const tx = db.transaction('ingredients', 'readwrite');
+            tx.objectStore('ingredients').add(data);
+            tx.oncomplete = () => {
+                e.target.reset();
+                refreshIngredientsList();
+            };
+        });
+
+        function refreshIngredientsList() {
+            if (!db) return;
+            const tx = db.transaction('ingredients', 'readonly');
+            const req = tx.objectStore('ingredients').getAll();
+            req.onsuccess = () => {
+                const items = req.result.sort((a,b) => new Date(b.date) - new Date(a.date));
+                const tbody = document.querySelector('#ingredientsTable tbody');
+                tbody.innerHTML = '';
+                items.forEach(it => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${it.date}</td>
+                        <td>${it.ingredient}</td>
+                        <td>${it.quantity}</td>
+                        <td class="text-end">₱${it.price.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            };
+        }
+
+        // ========== Reports ==========
+        document.getElementById('calcReport').addEventListener('click', () => {
+            const from = document.getElementById('reportFrom').value;
+            const to = document.getElementById('reportTo').value;
+            const salesTx = db.transaction('sales', 'readonly');
+            const salesReq = salesTx.objectStore('sales').getAll();
+            salesReq.onsuccess = () => {
+                let sales = salesReq.result;
+                if (from) sales = sales.filter(s => s.saleDate >= from);
+                if (to) sales = sales.filter(s => s.saleDate <= to + 'T23:59:59');
+                const totalSales = sales.reduce((sum, s) => sum + s.totalAmount, 0);
+
+                const ingTx = db.transaction('ingredients', 'readonly');
+                const ingReq = ingTx.objectStore('ingredients').getAll();
+                ingReq.onsuccess = () => {
+                    let ings = ingReq.result;
+                    if (from) ings = ings.filter(i => i.date >= from);
+                    if (to) ings = ings.filter(i => i.date <= to);
+                    const totalCost = ings.reduce((sum, i) => sum + i.price, 0);
+                    const profit = totalSales - totalCost;
+                    document.getElementById('rSales').textContent = ₱${totalSales.toFixed(2)};
+                    document.getElementById('rCosts').textContent = ₱${totalCost.toFixed(2)};
+                    document.getElementById('rProfit').textContent = ₱${profit.toFixed(2)};
+                };
+            };
+        });
+
+        // ========== Backup & Import ==========
+        document.getElementById('exportData').addEventListener('click', async () => {
+            const sales = await new Promise(r => {
+                const tx = db.transaction('sales', 'readonly');
+                tx.objectStore('sales').getAll().onsuccess = e => r(e.target.result);
+            });
+            const saleItems = await new Promise(r => {
+                const tx = db.transaction('saleItems', 'readonly');
+                tx.objectStore('saleItems').getAll().onsuccess = e => r(e.target.result);
+            });
+            const ingredients = await new Promise(r => {
+                const tx = db.transaction('ingredients', 'readonly');
+                tx.objectStore('ingredients').getAll().onsuccess = e => r(e.target.result);
+            });
+            const backup = { sales, saleItems, ingredients };
+            const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = clarks_backup_${new Date().toISOString().slice(0,10)}.json;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('importFile').addEventListener('change', async e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const text = await file.text();
+            try {
+                const backup = JSON.parse(text);
+                if (!backup.sales || !backup.saleItems || !backup.ingredients) throw new Error('Invalid file');
+                // Clear current DB and populate
+                const tx = db.transaction(['sales','saleItems','ingredients'], 'readwrite');
+                tx.objectStore('sales').clear();
+                tx.objectStore('saleItems').clear();
+                tx.objectStore('ingredients').clear();
+                backup.sales.forEach(s => tx.objectStore('sales').add(s));
+                backup.saleItems.forEach(si => tx.objectStore('saleItems').add(si));
+                backup.ingredients.forEach(i => tx.objectStore('ingredients').add(i));
+                tx.oncomplete = () => {
+                    alert('Backup imported successfully!');
+                    refreshSalesList();
+                    refreshIngredientsList();
+                };
+            } catch (err) {
+                alert('Invalid backup file.');
+            }
+            e.target.value = '';
+        });
+
+        // ========== PWA Install ==========
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', e => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'inline-block';
+        });
+
+        document.getElementById('installBtn').addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => deferredPrompt = null);
+            }
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
